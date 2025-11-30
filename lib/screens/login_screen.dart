@@ -12,7 +12,7 @@ class LoginScreen extends StatelessWidget {
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () {
-            Navigator.pop(context); //Go back to LandingScreen
+            Navigator.pop(context); // Go back to LandingScreen
           },
         ),
       ),

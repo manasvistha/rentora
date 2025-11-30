@@ -3,6 +3,7 @@ import 'package:rentora/screens/forgot_screen.dart';
 import 'package:rentora/screens/landing_screen.dart';
 import 'package:rentora/screens/login_screen.dart';
 import 'package:rentora/screens/signup_screen.dart';
+import 'package:rentora/screens/splash_screen.dart';
 
 class App extends StatelessWidget {
   const App({super.key});
@@ -10,12 +11,15 @@ class App extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      initialRoute: 'LandingScreen',
+      debugShowCheckedModeBanner: false,
+      initialRoute: '/splash',
+
       routes: {
-        'LandingScreen': (context) => LandingScreen(),
-        'LoginScreen': (context) => LoginScreen(),
-        'Forgot': (context) => ForgotScreen(),
-        'signup': (context) => SignupScreen(),
+        '/splash': (context) => const SplashScreen(),
+        '/landing': (context) => const LandingScreen(),
+        '/login': (context) => const LoginScreen(),
+        '/forgot': (context) => const ForgotScreen(),
+        '/signup': (context) => const SignupScreen(),
       },
     );
   }
