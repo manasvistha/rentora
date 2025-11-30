@@ -13,7 +13,7 @@ class LandingScreen extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.start,
           children: [
             const SizedBox(height: 40),
-            Image.asset("assets/images/Logo.png", height: 100),
+            Image.asset("assets/images/Logo.png", height: 150),
 
             const SizedBox(height: 20),
             Image.asset(

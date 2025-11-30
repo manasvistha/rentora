@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'signup_screen.dart';
+import 'forgot_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -34,8 +35,8 @@ class _LoginScreenState extends State<LoginScreen> {
           key: _formKey,
           child: Column(
             children: [
-              Center(child: Image.asset("assets/images/Logo.png", height: 80)),
-              const SizedBox(height: 40),
+              Center(child: Image.asset("assets/images/Logo.png", height: 150)),
+              const SizedBox(height: 10),
               // Title
               Align(
                 alignment: Alignment.centerLeft,
@@ -120,7 +121,14 @@ class _LoginScreenState extends State<LoginScreen> {
               Align(
                 alignment: Alignment.centerRight,
                 child: TextButton(
-                  onPressed: () {},
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const ForgotScreen(),
+                      ),
+                    );
+                  },
                   child: const Text(
                     "Forgot Password?",
                     style: TextStyle(color: Colors.black),
