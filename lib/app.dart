@@ -4,6 +4,7 @@ import 'package:rentora/screens/landing_screen.dart';
 import 'package:rentora/screens/login_screen.dart';
 import 'package:rentora/screens/signup_screen.dart';
 import 'package:rentora/screens/splash_screen.dart';
+import 'package:rentora/screens/dashboard_screen.dart';
 
 class App extends StatelessWidget {
   const App({super.key});
@@ -20,6 +21,7 @@ class App extends StatelessWidget {
         '/login': (context) => const LoginScreen(),
         '/forgot': (context) => const ForgotScreen(),
         '/signup': (context) => const SignupScreen(),
+        '/dashboard': (context) => const DashboardScreen(),
       },
     );
   }
