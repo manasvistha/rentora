@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'signup_screen.dart';
 import 'forgot_screen.dart';
+import 'dashboard_screen.dart'; // IMPORTANT: Added this import
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -37,7 +38,7 @@ class _LoginScreenState extends State<LoginScreen> {
             children: [
               Center(child: Image.asset("assets/images/Logo.png", height: 150)),
               const SizedBox(height: 10),
-              // Title
+
               Align(
                 alignment: Alignment.centerLeft,
                 child: const Text(
@@ -76,6 +77,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   return null;
                 },
               ),
+
               const SizedBox(height: 20),
 
               // Password
@@ -155,11 +157,20 @@ class _LoginScreenState extends State<LoginScreen> {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(content: Text("Login Successful")),
                       );
+
+                      // Navigate to Dashboard
+                      Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const DashboardScreen(),
+                        ),
+                      );
                     }
                   },
                   child: const Text("Login", style: TextStyle(fontSize: 18)),
                 ),
               ),
+
               const SizedBox(height: 20),
 
               // Sign Up
@@ -186,6 +197,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ],
               ),
+
               const SizedBox(height: 20),
             ],
           ),
