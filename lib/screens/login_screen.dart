@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'signup_screen.dart';
 import 'forgot_screen.dart';
-import 'dashboard_screen.dart'; // IMPORTANT: Added this import
+import 'dashboard_screen.dart'; // Import dashboard
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -19,7 +19,7 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // AppBar with back button
+      // AppBar
       appBar: AppBar(
         backgroundColor: const Color(0xFF4AA6A6),
         elevation: 0,
@@ -30,6 +30,7 @@ class _LoginScreenState extends State<LoginScreen> {
         title: const Text("Login", style: TextStyle(color: Colors.white)),
       ),
       backgroundColor: const Color(0xFFB7E3E4),
+
       body: SingleChildScrollView(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
         child: Form(
@@ -46,6 +47,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   style: TextStyle(fontSize: 34, fontWeight: FontWeight.bold),
                 ),
               ),
+
               const SizedBox(height: 20),
 
               // Email
@@ -154,11 +156,18 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   onPressed: () {
                     if (_formKey.currentState!.validate()) {
+                      // GREEN Success Snackbar
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text("Login Successful")),
+                        SnackBar(
+                          content: const Text(
+                            "Login Successful",
+                            style: TextStyle(color: Colors.white),
+                          ),
+                          backgroundColor: Colors.green, // <<<<<< GREEN COLOR
+                        ),
                       );
 
-                      // Navigate to Dashboard
+                      // Go to dashboard
                       Navigator.pushReplacement(
                         context,
                         MaterialPageRoute(
@@ -173,7 +182,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
               const SizedBox(height: 20),
 
-              // Sign Up
+              // Sign Up Navigation
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [

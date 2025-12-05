@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'landing_screen.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -14,13 +13,10 @@ class _SplashScreenState extends State<SplashScreen> {
   void initState() {
     super.initState();
 
-    Timer(
-      const Duration(seconds: 2),
-      () => Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const LandingScreen()),
-      ),
-    );
+    Timer(const Duration(seconds: 2), () {
+      // Navigate to Onboarding Screen
+      Navigator.pushReplacementNamed(context, '/onboarding');
+    });
   }
 
   @override
