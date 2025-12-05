@@ -18,7 +18,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       backgroundColor: Colors.white,
       body: Column(
         children: [
-          // BACK BUTTON (shows only after page 0)
           Padding(
             padding: const EdgeInsets.only(top: 40, left: 15),
             child: Align(
@@ -37,8 +36,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               ),
             ),
           ),
-
-          // PAGEVIEW (Swipe left/right)
           Expanded(
             flex: 4,
             child: PageView.builder(
@@ -85,8 +82,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           ),
 
           const SizedBox(height: 20),
-
-          // DOT INDICATORS
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: List.generate(
@@ -106,8 +101,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           ),
 
           const SizedBox(height: 25),
-
-          // NEXT / GET STARTED BUTTON
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20),
             child: ElevatedButton(

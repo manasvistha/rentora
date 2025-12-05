@@ -12,7 +12,7 @@ class DashboardScreen extends StatelessWidget {
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () {
-            Navigator.pop(context); // Go back to Login
+            Navigator.pop(context);
           },
         ),
         title: const Text("Dashboard", style: TextStyle(color: Colors.white)),

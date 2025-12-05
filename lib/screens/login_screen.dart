@@ -19,7 +19,6 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // AppBar
       appBar: AppBar(
         backgroundColor: const Color(0xFF4AA6A6),
         elevation: 0,
@@ -49,8 +48,6 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
 
               const SizedBox(height: 20),
-
-              // Email
               TextFormField(
                 controller: _emailController,
                 keyboardType: TextInputType.emailAddress,
@@ -81,8 +78,6 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
 
               const SizedBox(height: 20),
-
-              // Password
               TextFormField(
                 controller: _passController,
                 obscureText: !showPassword,
@@ -120,8 +115,6 @@ class _LoginScreenState extends State<LoginScreen> {
                   return null;
                 },
               ),
-
-              // Forgot Password
               Align(
                 alignment: Alignment.centerRight,
                 child: TextButton(
@@ -141,8 +134,6 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
 
               const SizedBox(height: 25),
-
-              // Login Button
               SizedBox(
                 width: double.infinity,
                 height: 50,
@@ -156,18 +147,16 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   onPressed: () {
                     if (_formKey.currentState!.validate()) {
-                      // GREEN Success Snackbar
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
                           content: const Text(
                             "Login Successful",
                             style: TextStyle(color: Colors.white),
                           ),
-                          backgroundColor: Colors.green, // <<<<<< GREEN COLOR
+                          backgroundColor: Colors.green,
                         ),
                       );
 
-                      // Go to dashboard
                       Navigator.pushReplacement(
                         context,
                         MaterialPageRoute(
@@ -181,8 +170,6 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
 
               const SizedBox(height: 20),
-
-              // Sign Up Navigation
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [

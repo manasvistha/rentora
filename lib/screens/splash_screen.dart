@@ -14,7 +14,6 @@ class _SplashScreenState extends State<SplashScreen> {
     super.initState();
 
     Timer(const Duration(seconds: 2), () {
-      // Navigate to Onboarding Screen
       Navigator.pushReplacementNamed(context, '/onboarding');
     });
   }

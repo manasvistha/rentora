@@ -36,7 +36,6 @@ class _ForgotScreenState extends State<ForgotScreen> {
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
         child: Column(
           children: [
-            // Logo
             Center(child: Image.asset("assets/images/Logo.png", height: 150)),
             const SizedBox(height: 10),
 
@@ -48,8 +47,6 @@ class _ForgotScreenState extends State<ForgotScreen> {
               ),
             ),
             const SizedBox(height: 30),
-
-            // New Password
             TextFormField(
               controller: _newPassController,
               obscureText: !showPassword1,
@@ -83,8 +80,6 @@ class _ForgotScreenState extends State<ForgotScreen> {
               ),
             ),
             const SizedBox(height: 20),
-
-            // Confirm Password
             TextFormField(
               controller: _confirmPassController,
               obscureText: !showPassword2,
@@ -119,8 +114,6 @@ class _ForgotScreenState extends State<ForgotScreen> {
             ),
 
             const SizedBox(height: 30),
-
-            // Change Password Button
             SizedBox(
               width: double.infinity,
               height: 50,
@@ -145,8 +138,6 @@ class _ForgotScreenState extends State<ForgotScreen> {
             ),
 
             const SizedBox(height: 20),
-
-            // Login Text
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [

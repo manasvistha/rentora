@@ -21,7 +21,6 @@ class _SignupScreenState extends State<SignupScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // AppBar
       appBar: AppBar(
         backgroundColor: const Color(0xFF4AA6A6),
         elevation: 0,
@@ -41,8 +40,6 @@ class _SignupScreenState extends State<SignupScreen> {
             children: [
               Center(child: Image.asset("assets/images/Logo.png", height: 150)),
               const SizedBox(height: 10),
-
-              // Title
               const Align(
                 alignment: Alignment.centerLeft,
                 child: Text(
@@ -51,8 +48,6 @@ class _SignupScreenState extends State<SignupScreen> {
                 ),
               ),
               const SizedBox(height: 20),
-
-              // Email
               TextFormField(
                 controller: _emailController,
                 keyboardType: TextInputType.emailAddress,
@@ -82,8 +77,6 @@ class _SignupScreenState extends State<SignupScreen> {
                 },
               ),
               const SizedBox(height: 20),
-
-              // Password
               TextFormField(
                 controller: _passController,
                 obscureText: !showPassword,
@@ -124,8 +117,6 @@ class _SignupScreenState extends State<SignupScreen> {
                 },
               ),
               const SizedBox(height: 20),
-
-              // Confirm Password
               TextFormField(
                 controller: _confirmPassController,
                 obscureText: !showConfirmPass,
@@ -166,8 +157,6 @@ class _SignupScreenState extends State<SignupScreen> {
                 },
               ),
               const SizedBox(height: 25),
-
-              // Create Account Button
               SizedBox(
                 width: double.infinity,
                 height: 50,
@@ -206,8 +195,6 @@ class _SignupScreenState extends State<SignupScreen> {
                 ),
               ),
               const SizedBox(height: 20),
-
-              // Login
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
