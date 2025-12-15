@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:rentora/models/onboarding_model.dart';
-import 'package:rentora/screens/forgot_screen.dart';
+import 'package:rentora/screens/splash_screen.dart';
 import 'package:rentora/screens/landing_screen.dart';
 import 'package:rentora/screens/login_screen.dart';
+import 'package:rentora/screens/forgot_screen.dart';
 import 'package:rentora/screens/signup_screen.dart';
-import 'package:rentora/screens/splash_screen.dart';
 import 'package:rentora/screens/dashboard_screen.dart';
 import 'package:rentora/screens/onboardingScreen.dart';
+import 'package:rentora/screens/bottomnavigation_screen.dart';
 
 class App extends StatelessWidget {
   const App({super.key});
@@ -14,9 +14,7 @@ class App extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      debugShowCheckedModeBanner: false,
       initialRoute: '/splash',
-
       routes: {
         '/splash': (context) => const SplashScreen(),
         '/landing': (context) => const LandingScreen(),
@@ -25,6 +23,7 @@ class App extends StatelessWidget {
         '/signup': (context) => const SignupScreen(),
         '/dashboard': (context) => const DashboardScreen(),
         '/onboarding': (context) => const OnboardingScreen(),
+        '/bottomnavigation': (context) => const BottomnavigationScreen(),
       },
     );
   }
