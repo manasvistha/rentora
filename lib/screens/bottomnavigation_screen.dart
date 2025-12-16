@@ -29,17 +29,17 @@ class _BottomnavigationScreenState extends State<BottomnavigationScreen> {
         unselectedItemColor: Colors.grey,
         onTap: (index) {
           setState(() {
-            _selectedIndex = index; // only highlight icon
+            _selectedIndex = index;
           });
         },
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
           BottomNavigationBarItem(icon: Icon(Icons.search), label: 'Search'),
+          BottomNavigationBarItem(icon: Icon(Icons.message), label: 'Message'),
           BottomNavigationBarItem(
             icon: Icon(Icons.settings),
             label: 'Settings',
           ),
-          BottomNavigationBarItem(icon: Icon(Icons.message), label: 'Message'),
           BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
         ],
       ),
