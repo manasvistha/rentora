@@ -22,10 +22,6 @@ class App extends StatelessWidget {
         '/signup': (context) => const SignupScreen(),
         '/onboarding': (context) => const OnboardingScreen(),
         '/bottomnavigation': (context) => const BottomnavigationScreen(),
-        '/home': (context) => const BottomnavigationScreen(),
-        '/profile': (context) => const BottomnavigationScreen(),
-        '/about': (context) => const BottomnavigationScreen(),
-        '/cart': (context) => const BottomnavigationScreen(),
       },
     );
   }
