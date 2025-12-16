@@ -4,7 +4,6 @@ import 'package:rentora/screens/landing_screen.dart';
 import 'package:rentora/screens/login_screen.dart';
 import 'package:rentora/screens/forgot_screen.dart';
 import 'package:rentora/screens/signup_screen.dart';
-import 'package:rentora/screens/dashboard_screen.dart';
 import 'package:rentora/screens/onboardingScreen.dart';
 import 'package:rentora/screens/bottomnavigation_screen.dart';
 
@@ -14,16 +13,19 @@ class App extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      initialRoute: '/splash',
+      initialRoute: '/bottomnavigation',
       routes: {
         '/splash': (context) => const SplashScreen(),
         '/landing': (context) => const LandingScreen(),
         '/login': (context) => const LoginScreen(),
         '/forgot': (context) => const ForgotScreen(),
         '/signup': (context) => const SignupScreen(),
-        '/dashboard': (context) => const DashboardScreen(),
         '/onboarding': (context) => const OnboardingScreen(),
         '/bottomnavigation': (context) => const BottomnavigationScreen(),
+        '/home': (context) => const BottomnavigationScreen(),
+        '/profile': (context) => const BottomnavigationScreen(),
+        '/about': (context) => const BottomnavigationScreen(),
+        '/cart': (context) => const BottomnavigationScreen(),
       },
     );
   }

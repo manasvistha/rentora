@@ -111,8 +111,9 @@ class _SignupScreenState extends State<SignupScreen> {
                 ),
                 validator: (value) {
                   if (value == null || value.isEmpty) return "Enter password";
-                  if (value.length < 6)
+                  if (value.length < 6) {
                     return "Password must be at least 6 characters";
+                  }
                   return null;
                 },
               ),
@@ -151,8 +152,9 @@ class _SignupScreenState extends State<SignupScreen> {
                 ),
                 validator: (value) {
                   if (value == null || value.isEmpty) return "Confirm password";
-                  if (value != _passController.text)
+                  if (value != _passController.text) {
                     return "Passwords do not match";
+                  }
                   return null;
                 },
               ),
