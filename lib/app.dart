@@ -13,6 +13,7 @@ import 'package:rentora/screens/home_screen.dart';
 import 'package:rentora/screens/search_screen.dart';
 import 'package:rentora/screens/message_screen.dart';
 import 'package:rentora/screens/settings_screen.dart';
+import 'package:rentora/screens/profile_screen.dart';
 
 class App extends StatelessWidget {
   const App({super.key});
@@ -33,6 +34,7 @@ class App extends StatelessWidget {
         '/search': (context) => const SearchScreen(),
         '/message': (context) => const MessageScreen(),
         '/settings': (context) => const SettingsScreen(),
+        '/profile': (context) => const ProfileScreen(),
       },
     );
   }

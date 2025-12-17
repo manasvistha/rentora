@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:rentora/screens/profile_screen.dart';
 import 'home_screen.dart';
 import 'search_screen.dart';
 import 'message_screen.dart';
@@ -19,6 +20,7 @@ class _BottomnavigationScreenState extends State<BottomnavigationScreen> {
     SearchScreen(),
     MessageScreen(),
     SettingsScreen(),
+    ProfileScreen(),
   ];
 
   @override
