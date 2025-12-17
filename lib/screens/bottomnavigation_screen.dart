@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'home_screen.dart';
+import 'search_screen.dart';
 
 class BottomnavigationScreen extends StatefulWidget {
   const BottomnavigationScreen({super.key});
@@ -11,7 +12,7 @@ class BottomnavigationScreen extends StatefulWidget {
 class _BottomnavigationScreenState extends State<BottomnavigationScreen> {
   int _selectedIndex = 0;
 
-  final List<Widget> _screens = const [HomeScreen()];
+  final List<Widget> _screens = const [HomeScreen(), SearchScreen()];
 
   @override
   Widget build(BuildContext context) {
