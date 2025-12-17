@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'home_screen.dart';
 
 class BottomnavigationScreen extends StatefulWidget {
   const BottomnavigationScreen({super.key});
@@ -10,17 +11,19 @@ class BottomnavigationScreen extends StatefulWidget {
 class _BottomnavigationScreenState extends State<BottomnavigationScreen> {
   int _selectedIndex = 0;
 
+  final List<Widget> _screens = const [HomeScreen()];
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Home"), centerTitle: true),
-
-      body: const Center(
-        child: Text(
-          "Welcome to Home page ",
-          style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+      appBar: AppBar(
+        title: Text(
+          ["Home", "Search", "Message", "Settings", "Profile"][_selectedIndex],
         ),
+        centerTitle: true,
       ),
+
+      body: _screens[_selectedIndex],
 
       bottomNavigationBar: BottomNavigationBar(
         type: BottomNavigationBarType.fixed,

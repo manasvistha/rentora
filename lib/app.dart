@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:rentora/screens/home_screen.dart';
 import 'package:rentora/screens/splash_screen.dart';
 import 'package:rentora/screens/landing_screen.dart';
 import 'package:rentora/screens/login_screen.dart';
@@ -6,6 +7,7 @@ import 'package:rentora/screens/forgot_screen.dart';
 import 'package:rentora/screens/signup_screen.dart';
 import 'package:rentora/screens/onboardingScreen.dart';
 import 'package:rentora/screens/bottomnavigation_screen.dart';
+import 'package:rentora/screens/home_screen.dart';
 
 class App extends StatelessWidget {
   const App({super.key});
@@ -22,6 +24,7 @@ class App extends StatelessWidget {
         '/signup': (context) => const SignupScreen(),
         '/onboarding': (context) => const OnboardingScreen(),
         '/bottomnavigation': (context) => const BottomnavigationScreen(),
+        '/home': (context) => const HomeScreen(),
       },
     );
   }
