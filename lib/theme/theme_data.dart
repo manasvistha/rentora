@@ -2,11 +2,15 @@ import 'package:flutter/material.dart';
 
 ThemeData getApplicationTheme() {
   return ThemeData(
-    colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
     useMaterial3: false,
+
+    colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+
     primarySwatch: Colors.orange,
     scaffoldBackgroundColor: Colors.grey,
     fontFamily: 'OpenSans-Italic',
+
+    /// ELEVATED BUTTON THEME
     elevatedButtonTheme: ElevatedButtonThemeData(
       style: ElevatedButton.styleFrom(
         textStyle: const TextStyle(
@@ -15,8 +19,28 @@ ThemeData getApplicationTheme() {
           fontWeight: FontWeight.w500,
           fontFamily: 'OpenSans-Regular',
         ),
-        backgroundColor: Color(0xFF5B16D0),
+        backgroundColor: const Color(0xFF5B16D0),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
+      ),
+    ),
+
+    /// BOTTOM NAVIGATION BAR THEME (ADDED)
+    bottomNavigationBarTheme: const BottomNavigationBarThemeData(
+      backgroundColor: Color(0xFF524632),
+      selectedItemColor: Color(0xFFA48256),
+      unselectedItemColor: Color(0xFF8E8E8E),
+      selectedIconTheme: IconThemeData(color: Color(0xFFA48256)),
+      unselectedIconTheme: IconThemeData(color: Colors.white),
+      type: BottomNavigationBarType.fixed,
+      selectedLabelStyle: TextStyle(
+        fontSize: 12,
+        fontWeight: FontWeight.w500,
+        fontFamily: 'OpenSans-Regular',
+      ),
+      unselectedLabelStyle: TextStyle(
+        fontSize: 12,
+        fontWeight: FontWeight.w500,
+        fontFamily: 'OpenSans-Regular',
       ),
     ),
   );

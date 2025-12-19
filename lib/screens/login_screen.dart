@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'signup_screen.dart';
 import 'forgot_screen.dart';
-import 'dashboard_screen.dart'; // Import dashboard
+import 'bottomnavigation_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -50,8 +50,7 @@ class _LoginScreenState extends State<LoginScreen> {
               const SizedBox(height: 20),
               TextFormField(
                 controller: _emailController,
-                keyboardType: TextInputType.emailAddress,
-                textInputAction: TextInputAction.next,
+                keyboardType: TextInputType.text,
                 decoration: InputDecoration(
                   labelText: "Email",
                   labelStyle: const TextStyle(color: Colors.black),
@@ -81,7 +80,7 @@ class _LoginScreenState extends State<LoginScreen> {
               TextFormField(
                 controller: _passController,
                 obscureText: !showPassword,
-                textInputAction: TextInputAction.done,
+
                 decoration: InputDecoration(
                   labelText: "Password",
                   labelStyle: const TextStyle(color: Colors.black),
@@ -160,7 +159,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       Navigator.pushReplacement(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => const DashboardScreen(),
+                          builder: (context) => const BottomnavigationScreen(),
                         ),
                       );
                     }
