@@ -5,6 +5,14 @@ class SearchScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Center(child: Text("Search Screen"));
+    return Scaffold(
+      appBar: AppBar(automaticallyImplyLeading: false),
+      body: const Center(
+        child: Text(
+          "Welcome to Search page",
+          style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+        ),
+      ),
+    );
   }
 }

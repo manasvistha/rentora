@@ -27,19 +27,35 @@ class _BottomnavigationScreenState extends State<BottomnavigationScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        backgroundColor: const Color(0xFF2F9E9A),
+        elevation: 0,
         title: Text(
           ["Home", "Search", "Message", "Settings", "Profile"][_selectedIndex],
+          style: const TextStyle(color: Colors.white),
         ),
         centerTitle: true,
       ),
 
-      body: _screens[_selectedIndex],
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Color(0xFF2F9E9A), // dark top
+              Color(0xFF6CCBC7), // mid
+              Color(0xFFD8F3F2), // light bottom
+            ],
+          ),
+        ),
+        child: _screens[_selectedIndex],
+      ),
 
       bottomNavigationBar: BottomNavigationBar(
         type: BottomNavigationBarType.fixed,
         currentIndex: _selectedIndex,
-        selectedItemColor: Colors.green,
-        unselectedItemColor: Colors.grey,
+        selectedItemColor: const Color(0xFF2F9E9A),
+        unselectedItemColor: const Color(0xFF8E8E8E),
         onTap: (index) {
           setState(() {
             _selectedIndex = index;
