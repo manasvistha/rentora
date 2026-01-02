@@ -9,8 +9,6 @@ ThemeData getApplicationTheme() {
     primarySwatch: Colors.orange,
     scaffoldBackgroundColor: Colors.grey,
     fontFamily: 'OpenSans-Italic',
-
-    /// ELEVATED BUTTON THEME
     elevatedButtonTheme: ElevatedButtonThemeData(
       style: ElevatedButton.styleFrom(
         textStyle: const TextStyle(
@@ -23,8 +21,6 @@ ThemeData getApplicationTheme() {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
       ),
     ),
-
-    /// BOTTOM NAVIGATION BAR THEME (ADDED)
     bottomNavigationBarTheme: const BottomNavigationBarThemeData(
       backgroundColor: Color(0xFF524632),
       selectedItemColor: Color(0xFFA48256),

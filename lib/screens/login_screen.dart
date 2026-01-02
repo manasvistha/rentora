@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+
+import '../common/my_snackbar.dart';
 import 'signup_screen.dart';
 import 'forgot_screen.dart';
 import 'bottomnavigation_screen.dart';
@@ -14,6 +16,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passController = TextEditingController();
+
   bool showPassword = false;
 
   @override
@@ -37,67 +40,52 @@ class _LoginScreenState extends State<LoginScreen> {
           child: Column(
             children: [
               Center(child: Image.asset("assets/images/Logo.png", height: 150)),
+
               const SizedBox(height: 10),
 
-              Align(
+              const Align(
                 alignment: Alignment.centerLeft,
-                child: const Text(
+                child: Text(
                   "Login",
                   style: TextStyle(fontSize: 34, fontWeight: FontWeight.bold),
                 ),
               ),
 
               const SizedBox(height: 20),
+
+              // EMAIL
               TextFormField(
                 controller: _emailController,
-                keyboardType: TextInputType.text,
+                keyboardType: TextInputType.emailAddress,
                 decoration: InputDecoration(
                   labelText: "Email",
-                  labelStyle: const TextStyle(color: Colors.black),
                   prefixIcon: const Icon(Icons.email),
                   filled: true,
                   fillColor: Colors.white,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(18),
                   ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(18),
-                    borderSide: const BorderSide(color: Colors.white),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(18),
-                    borderSide: const BorderSide(color: Colors.black, width: 2),
-                  ),
                 ),
                 validator: (value) {
-                  if (value == null || value.isEmpty) return "Enter email";
-                  if (!value.contains("@")) return "Invalid email";
+                  if (value == null || value.isEmpty) {
+                    return "Enter email";
+                  }
+                  if (!value.contains("@")) {
+                    return "Invalid email";
+                  }
                   return null;
                 },
               ),
 
               const SizedBox(height: 20),
+
+              // PASSWORD
               TextFormField(
                 controller: _passController,
                 obscureText: !showPassword,
-
                 decoration: InputDecoration(
                   labelText: "Password",
-                  labelStyle: const TextStyle(color: Colors.black),
                   prefixIcon: const Icon(Icons.lock),
-                  filled: true,
-                  fillColor: Colors.white,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(18),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(18),
-                    borderSide: const BorderSide(color: Colors.white),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(18),
-                    borderSide: const BorderSide(color: Colors.black, width: 2),
-                  ),
                   suffixIcon: IconButton(
                     icon: Icon(
                       showPassword ? Icons.visibility : Icons.visibility_off,
@@ -108,21 +96,27 @@ class _LoginScreenState extends State<LoginScreen> {
                       });
                     },
                   ),
+                  filled: true,
+                  fillColor: Colors.white,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(18),
+                  ),
                 ),
                 validator: (value) {
-                  if (value == null || value.isEmpty) return "Enter password";
+                  if (value == null || value.isEmpty) {
+                    return "Enter password";
+                  }
                   return null;
                 },
               ),
+
               Align(
                 alignment: Alignment.centerRight,
                 child: TextButton(
                   onPressed: () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(
-                        builder: (context) => const ForgotScreen(),
-                      ),
+                      MaterialPageRoute(builder: (_) => const ForgotScreen()),
                     );
                   },
                   child: const Text(
@@ -133,6 +127,8 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
 
               const SizedBox(height: 25),
+
+              // LOGIN BUTTON
               SizedBox(
                 width: double.infinity,
                 height: 50,
@@ -146,20 +142,16 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   onPressed: () {
                     if (_formKey.currentState!.validate()) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: const Text(
-                            "Login Successful",
-                            style: TextStyle(color: Colors.white),
-                          ),
-                          backgroundColor: Colors.green,
-                        ),
+                      showMySnackBar(
+                        context: context,
+                        message: "Login Successful",
+                        color: Colors.green,
                       );
 
                       Navigator.pushReplacement(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => const BottomnavigationScreen(),
+                          builder: (_) => const BottomnavigationScreen(),
                         ),
                       );
                     }
@@ -169,6 +161,7 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
 
               const SizedBox(height: 20),
+
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -177,9 +170,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     onTap: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(
-                          builder: (context) => const SignupScreen(),
-                        ),
+                        MaterialPageRoute(builder: (_) => const SignupScreen()),
                       );
                     },
                     child: const Text(

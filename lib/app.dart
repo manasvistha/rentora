@@ -7,7 +7,7 @@ import 'package:rentora/screens/landing_screen.dart';
 import 'package:rentora/screens/login_screen.dart';
 import 'package:rentora/screens/forgot_screen.dart';
 import 'package:rentora/screens/signup_screen.dart';
-import 'package:rentora/screens/onboardingScreen.dart';
+import 'package:rentora/features/onboarding/presentation/pages/onboardingScreen.dart';
 import 'package:rentora/screens/bottomnavigation_screen.dart';
 import 'package:rentora/screens/home_screen.dart';
 import 'package:rentora/screens/search_screen.dart';
