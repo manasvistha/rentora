@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:rentora/screens/profile_screen.dart';
+import 'package:rentora/features/dashboard/presentation/pages/profile_screen.dart';
 import 'home_screen.dart';
 import 'search_screen.dart';
 import 'message_screen.dart';
@@ -41,11 +41,7 @@ class _BottomnavigationScreenState extends State<BottomnavigationScreen> {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFF2F9E9A), // dark top
-              Color(0xFF6CCBC7), // mid
-              Color(0xFFD8F3F2), // light bottom
-            ],
+            colors: [Color(0xFF2F9E9A), Color(0xFF6CCBC7), Color(0xFFD8F3F2)],
           ),
         ),
         child: _screens[_selectedIndex],

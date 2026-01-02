@@ -1,19 +1,19 @@
 import 'package:flutter/material.dart';
-import 'package:rentora/screens/home_screen.dart';
-import 'package:rentora/screens/search_screen.dart';
-import 'package:rentora/screens/settings_screen.dart';
-import 'package:rentora/screens/splash_screen.dart';
+import 'package:rentora/features/dashboard/presentation/pages/home_screen.dart';
+import 'package:rentora/features/dashboard/presentation/pages/search_screen.dart';
+import 'package:rentora/features/dashboard/presentation/pages/settings_screen.dart';
+import 'package:rentora/features/splash/presentation/pages/splash_screen.dart';
 import 'package:rentora/screens/landing_screen.dart';
 import 'package:rentora/screens/login_screen.dart';
 import 'package:rentora/screens/forgot_screen.dart';
 import 'package:rentora/screens/signup_screen.dart';
 import 'package:rentora/features/onboarding/presentation/pages/onboardingScreen.dart';
-import 'package:rentora/screens/bottomnavigation_screen.dart';
-import 'package:rentora/screens/home_screen.dart';
-import 'package:rentora/screens/search_screen.dart';
-import 'package:rentora/screens/message_screen.dart';
-import 'package:rentora/screens/settings_screen.dart';
-import 'package:rentora/screens/profile_screen.dart';
+import 'package:rentora/features/dashboard/presentation/pages/bottomnavigation_screen.dart';
+import 'package:rentora/features/dashboard/presentation/pages/home_screen.dart';
+import 'package:rentora/features/dashboard/presentation/pages/search_screen.dart';
+import 'package:rentora/features/dashboard/presentation/pages/message_screen.dart';
+import 'package:rentora/features/dashboard/presentation/pages/settings_screen.dart';
+import 'package:rentora/features/dashboard/presentation/pages/profile_screen.dart';
 
 class App extends StatelessWidget {
   const App({super.key});
