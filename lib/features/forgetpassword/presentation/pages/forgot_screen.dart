@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'login_screen.dart';
+import '../../../../screens/login_screen.dart';
 
 class ForgotScreen extends StatefulWidget {
   const ForgotScreen({super.key});
