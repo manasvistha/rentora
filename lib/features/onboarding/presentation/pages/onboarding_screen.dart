@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:rentora/features/auth/presentation/state/auth_state.dart';
+import 'package:rentora/features/auth/presentation/view_model/auth_view_model.dart';
 import 'package:rentora/features/onboarding/data/models/onboarding_model.dart';
 
 class OnboardingScreen extends StatefulWidget {
@@ -113,7 +116,19 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               ),
               onPressed: () {
                 if (_currentIndex == OnboardingData.pages.length - 1) {
-                  Navigator.pushReplacementNamed(context, '/landing');
+                  final authViewModel = context.read<AuthViewModel>();
+                  authViewModel.restoreSession().then((_) {
+                    // Check the auth state after restoreSession completes
+                    final state = authViewModel.state;
+                    if (state is AuthAuthenticated) {
+                      Navigator.pushReplacementNamed(
+                        context,
+                        '/bottomnavigation',
+                      );
+                    } else {
+                      Navigator.pushReplacementNamed(context, '/login');
+                    }
+                  });
                 } else {
                   _controller.nextPage(
                     duration: const Duration(milliseconds: 300),

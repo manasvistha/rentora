@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../../screens/login_screen.dart';
+import '../../../auth/presentation/pages/login_page.dart';
 
 class ForgotScreen extends StatefulWidget {
   const ForgotScreen({super.key});
@@ -147,7 +147,7 @@ class _ForgotScreenState extends State<ForgotScreen> {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => const LoginScreen(),
+                        builder: (context) => const LoginPage(),
                       ),
                     );
                   },
