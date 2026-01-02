@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:rentora/models/onboarding_model.dart';
+import 'package:rentora/features/onboarding/data/models/onboarding_model.dart';
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
