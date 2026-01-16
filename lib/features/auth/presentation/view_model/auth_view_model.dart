@@ -1,65 +1,118 @@
-import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:rentora/features/auth/domain/entities/auth_entity.dart';
 import 'package:rentora/features/auth/domain/usecases/get_current_user_usecase.dart';
 import 'package:rentora/features/auth/domain/usecases/login_usecase.dart';
 import 'package:rentora/features/auth/domain/usecases/logout_usecase.dart';
 import 'package:rentora/features/auth/domain/usecases/signup_usecase.dart';
 import 'package:rentora/features/auth/presentation/state/auth_state.dart';
 
-class AuthViewModel extends ChangeNotifier {
-  final LoginUseCase loginUseCase;
-  final SignupUseCase signupUseCase;
-  final LogoutUseCase logoutUseCase;
-  final GetCurrentUserUseCase getCurrentUserUseCase;
+// Provider definition using the modern NotifierProvider
+final authViewModelProvider = NotifierProvider<AuthViewModel, AuthState>(
+  AuthViewModel.new,
+);
 
-  AuthViewModel({
-    required this.loginUseCase,
-    required this.signupUseCase,
-    required this.logoutUseCase,
-    required this.getCurrentUserUseCase,
-  });
+class AuthViewModel extends Notifier<AuthState> {
+  late final SignupUsecase _signupUseCase;
+  late final LoginUseCase _loginUseCase;
+  late final GetCurrentUserUseCase _getCurrentUserUseCase;
+  late final LogoutUseCase _logoutUseCase;
 
-  AuthState _state = AuthInitial();
-  AuthState get state => _state;
+  @override
+  AuthState build() {
+    // Initializing use cases from their respective providers
+    _signupUseCase = ref.read(signupUseCaseProvider);
+    _loginUseCase = ref.read(loginUseCaseProvider);
+    _getCurrentUserUseCase = ref.read(getCurrentUserUseCaseProvider);
+    _logoutUseCase = ref.read(logoutUseCaseProvider);
 
+    // Auto-check for existing session on app startup/provider initialization
+    Future.microtask(() => getCurrentUser());
+
+    return const AuthState();
+  }
+
+  /// Handles user registration (using your strict 4-field UserEntity)
+  Future<void> register(AuthEntity user) async {
+    state = state.copyWith(status: AuthStatus.loading);
+
+    final result = await _signupUseCase.execute(user);
+
+    result.fold(
+      (failure) => state = state.copyWith(
+        status: AuthStatus.error,
+        errorMessage: failure.message,
+      ),
+      (success) => state = state.copyWith(status: AuthStatus.registered),
+    );
+  }
+
+  /// Handles user login
   Future<void> login(String email, String password) async {
-    _state = AuthLoading();
-    notifyListeners();
+    state = state.copyWith(status: AuthStatus.loading);
 
-    final result = await loginUseCase(email, password);
+    final result = await _loginUseCase.execute(email, password);
+
     result.fold(
-      (e) => _state = AuthError(e),
-      (user) => _state = AuthAuthenticated(user),
+      (failure) => state = state.copyWith(
+        status: AuthStatus.error,
+        errorMessage: failure.message,
+      ),
+      (success) => state = state.copyWith(
+        status: AuthStatus.authenticated,
+        // After successful login, we usually trigger getCurrentUser
+        // to populate the user entity in the state
+      ),
     );
-    notifyListeners();
+
+    // If successful, refresh the current user data
+    if (state.status == AuthStatus.authenticated) {
+      await getCurrentUser();
+    }
   }
 
-  Future<void> signup(String email, String password, String name) async {
-    _state = AuthLoading();
-    notifyListeners();
+  /// Checks if a session exists (e.g., on app startup)
+  Future<void> getCurrentUser() async {
+    state = state.copyWith(status: AuthStatus.loading);
 
-    final result = await signupUseCase(email, password, name);
+    final result = await _getCurrentUserUseCase.execute();
+
     result.fold(
-      (e) => _state = AuthError(e),
-      (user) => _state = AuthAuthenticated(user),
+      (failure) => state = state.copyWith(
+        status: AuthStatus.unauthenticated,
+        errorMessage: failure.message,
+      ),
+      (user) {
+        if (user != null) {
+          state = state.copyWith(status: AuthStatus.authenticated, user: user);
+        } else {
+          state = state.copyWith(status: AuthStatus.unauthenticated);
+        }
+      },
     );
-    notifyListeners();
   }
 
+  /// Handles user logout
   Future<void> logout() async {
-    await logoutUseCase();
-    _state = AuthInitial();
-    notifyListeners();
+    state = state.copyWith(status: AuthStatus.loading);
+
+    final result = await _logoutUseCase.execute();
+
+    result.fold(
+      (failure) => state = state.copyWith(
+        status: AuthStatus.error,
+        errorMessage: failure.message,
+      ),
+      (success) => state = state.copyWith(
+        status: AuthStatus.unauthenticated,
+        user: null,
+      ),
+    );
   }
 
-  Future<void> restoreSession() async {
-    final result = await getCurrentUserUseCase();
-    result.fold((_) => _state = AuthInitial(), (user) {
-      if (user != null) {
-        _state = AuthAuthenticated(user);
-      } else {
-        _state = AuthInitial();
-      }
-    });
-    notifyListeners();
+  /// Resets error messages
+  void clearError() {
+    state = state.copyWith(errorMessage: null);
   }
+
+  Future<void> restoreSession() async {}
 }

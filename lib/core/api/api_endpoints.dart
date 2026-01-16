@@ -1,12 +1,25 @@
+// lib/core/api/api_endpoints.dart
+
 class ApiEndpoints {
   ApiEndpoints._();
 
-  static const String baseUrl = 'http://10.0.2.2:5050/api/auth';
+  // Updated to Port 5000 to match: const PORT = process.env.PORT || 5000;
+  // Use 10.0.2.2 for Android Emulator, or your IP for Physical Devices
+  //   static const String baseUrl = 'http://192.168.137.1:3000/api/';
+  //   static const String baseUrl = 'http://localhost:3000/api/';
+  static const String baseUrl = 'http://10.0.2.2:3000/api/';
 
-  static const Duration connectionTimeout = Duration(seconds: 15);
-  static const Duration receiveTimeout = Duration(seconds: 15);
+  static const Duration connectionTimeout = Duration(seconds: 30);
+  static const Duration receiveTimeout = Duration(seconds: 30);
 
-  static const String users = 'user';
-  static const String userLogin = 'login';
-  static const String userRegister = 'register';
+  // ============ Auth Endpoints ============
+  // Since you used app.use('/api/auth', authRoutes) in Express:
+
+  static const String login = 'auth/login'; // Becomes: .../api/auth/login
+  static const String register =
+      'auth/register'; // Becomes: .../api/auth/register
+
+  // If you add a get user route in your auth.routes.ts later:
+  static const String users = 'auth/';
+  static String userById(String id) => 'auth/$id';
 }

@@ -2,19 +2,21 @@ import 'package:dio/dio.dart';
 import 'package:dio_smart_retry/dio_smart_retry.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:pretty_dio_logger/pretty_dio_logger.dart';
 import 'package:rentora/core/api/api_endpoints.dart';
+import 'package:rentora/core/services/storage/user_session_service.dart';
 
-// Provider for ApiClient
+// 1. Define the provider for ApiClient
 final apiClientProvider = Provider<ApiClient>((ref) {
-  return ApiClient();
+  final sessionService = ref.read(userSessionServiceProvider);
+  return ApiClient(sessionService);
 });
 
 class ApiClient {
   late final Dio _dio;
+  final UserSessionService _sessionService;
 
-  ApiClient() {
+  ApiClient(this._sessionService) {
     _dio = Dio(
       BaseOptions(
         baseUrl: ApiEndpoints.baseUrl,
@@ -27,8 +29,8 @@ class ApiClient {
       ),
     );
 
-    // Add interceptors
-    _dio.interceptors.add(_AuthInterceptor());
+    // Add Auth Interceptor
+    _dio.interceptors.add(_AuthInterceptor(_sessionService));
 
     // Auto retry on network failures
     _dio.interceptors.add(
@@ -40,13 +42,6 @@ class ApiClient {
           Duration(seconds: 2),
           Duration(seconds: 3),
         ],
-        retryEvaluator: (error, attempt) {
-          // Retry on connection errors and timeouts, not on 4xx/5xx
-          return error.type == DioExceptionType.connectionTimeout ||
-              error.type == DioExceptionType.sendTimeout ||
-              error.type == DioExceptionType.receiveTimeout ||
-              error.type == DioExceptionType.connectionError;
-        },
       ),
     );
 
@@ -57,7 +52,6 @@ class ApiClient {
           requestHeader: true,
           requestBody: true,
           responseBody: true,
-          responseHeader: false,
           error: true,
           compact: true,
         ),
@@ -67,7 +61,8 @@ class ApiClient {
 
   Dio get dio => _dio;
 
-  // GET request
+  // --- HTTP Methods ---
+
   Future<Response> get(
     String path, {
     Map<String, dynamic>? queryParameters,
@@ -76,7 +71,6 @@ class ApiClient {
     return _dio.get(path, queryParameters: queryParameters, options: options);
   }
 
-  // POST request
   Future<Response> post(
     String path, {
     dynamic data,
@@ -91,7 +85,6 @@ class ApiClient {
     );
   }
 
-  // PUT request
   Future<Response> put(
     String path, {
     dynamic data,
@@ -106,7 +99,6 @@ class ApiClient {
     );
   }
 
-  // DELETE request
   Future<Response> delete(
     String path, {
     dynamic data,
@@ -121,7 +113,6 @@ class ApiClient {
     );
   }
 
-  // Multipart request for file uploads
   Future<Response> uploadFile(
     String path, {
     required FormData formData,
@@ -137,30 +128,27 @@ class ApiClient {
   }
 }
 
-// Auth Interceptor to add JWT token to requests
+// 2. Auth Interceptor using UserSessionService
 class _AuthInterceptor extends Interceptor {
-  final _storage = const FlutterSecureStorage();
-  static const String _tokenKey = 'auth_token';
+  final UserSessionService _sessionService;
+
+  _AuthInterceptor(this._sessionService);
 
   @override
   void onRequest(
     RequestOptions options,
     RequestInterceptorHandler handler,
   ) async {
-    // Skip auth for public endpoints
-    final publicEndpoints = [ApiEndpoints.userLogin];
+    // List of endpoints that don't need a token
+    final publicEndpoints = [ApiEndpoints.login, ApiEndpoints.register];
 
-    final isPublicGet =
-        options.method == 'GET' &&
-        publicEndpoints.any((endpoint) => options.path.startsWith(endpoint));
+    final isPublicEndpoint = publicEndpoints.any(
+      (e) => options.path.contains(e),
+    );
 
-    final isAuthEndpoint =
-        options.path == ApiEndpoints.userLogin ||
-        options.path == ApiEndpoints.users;
-
-    if (!isPublicGet && !isAuthEndpoint) {
-      final token = await _storage.read(key: _tokenKey);
-      if (token != null) {
+    if (!isPublicEndpoint) {
+      final token = await _sessionService.getToken();
+      if (token != null && token.isNotEmpty) {
         options.headers['Authorization'] = 'Bearer $token';
       }
     }
@@ -169,12 +157,10 @@ class _AuthInterceptor extends Interceptor {
   }
 
   @override
-  void onError(DioException err, ErrorInterceptorHandler handler) {
-    // Handle 401 Unauthorized - token expired
+  void onError(DioException err, ErrorInterceptorHandler handler) async {
+    // If 401 Unauthorized, clear the session automatically
     if (err.response?.statusCode == 401) {
-      // Clear token and redirect to login
-      _storage.delete(key: _tokenKey);
-      // You can add navigation logic here or use a callback
+      await _sessionService.deleteSession();
     }
     handler.next(err);
   }
