@@ -11,7 +11,6 @@ class HiveService {
     await Hive.initFlutter();
     Hive.registerAdapter(UserModelAdapter());
 
-    // ✅ OPEN BOXES ONCE
     await Hive.openBox<UserModel>(userBox);
     await Hive.openBox<String>(sessionBox);
   }

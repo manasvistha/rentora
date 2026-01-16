@@ -51,7 +51,6 @@ class AuthViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// ✅ RESTORE SESSION ON APP START
   Future<void> restoreSession() async {
     final result = await getCurrentUserUseCase();
     result.fold((_) => _state = AuthInitial(), (user) {

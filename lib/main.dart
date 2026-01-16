@@ -9,7 +9,6 @@ void main() async {
 
   configureDependencies();
 
-  // ✅ INIT HIVE ONCE BEFORE UI
   await GetIt.I<HiveService>().init();
 
   runApp(const App());

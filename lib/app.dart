@@ -22,7 +22,6 @@ class App extends StatelessWidget {
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
 
-        /// ✅ Splash is landing
         initialRoute: '/splash',
 
         routes: {

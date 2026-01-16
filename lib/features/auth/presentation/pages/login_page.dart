@@ -22,28 +22,32 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     return Consumer<AuthViewModel>(
-      builder: (context, viewModel, child) {
-        // Listen to state changes
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (viewModel.state is AuthAuthenticated) {
-            showMySnackBar(
-              context: context,
-              message: "Login Successful",
-              color: Colors.green,
-            );
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(builder: (_) => const BottomnavigationScreen()),
-            );
-          } else if (viewModel.state is AuthError) {
-            showMySnackBar(
-              context: context,
-              message: (viewModel.state as AuthError).message,
-              color: Colors.red,
-            );
-          }
-        });
-        return Scaffold(
+      builder: (context, viewModel, child) => _buildLoginForm(context, viewModel),
+    );
+  }
+
+  Widget _buildLoginForm(BuildContext context, AuthViewModel viewModel) {
+      // Listen to state changes
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (viewModel.state is AuthAuthenticated) {
+          showMySnackBar(
+            context: context,
+            message: "Login Successful",
+            color: Colors.green,
+          );
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (_) => const BottomnavigationScreen()),
+          );
+        } else if (viewModel.state is AuthError) {
+          showMySnackBar(
+            context: context,
+            message: (viewModel.state as AuthError).message,
+            color: Colors.red,
+          );
+        }
+      });
+      return Scaffold(
           appBar: AppBar(
             backgroundColor: const Color(0xFF4AA6A6),
             elevation: 0,
@@ -196,7 +200,5 @@ class _LoginPageState extends State<LoginPage> {
             ),
           ),
         );
-      },
-    );
   }
 }
