@@ -21,7 +21,6 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     super.dispose();
   }
 
-  // Handle navigation to next page or finishing onboarding
   void _handleNext(bool isLoading) async {
     if (isLoading) return;
 
@@ -35,11 +34,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     }
   }
 
-  // Handle skipping straight to login
   void _finishOnboarding() async {
     final authNotifier = ref.read(authViewModelProvider.notifier);
 
-    // Check if user already has a session
     await authNotifier.restoreSession();
 
     final authState = ref.read(authViewModelProvider);
@@ -64,7 +61,6 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            // --- HEADER: Logo & Skip Button ---
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
               child: Row(
@@ -93,7 +89,6 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
               ),
             ),
 
-            // --- BODY: PageView ---
             Expanded(
               child: PageView.builder(
                 controller: _pageController,
@@ -129,7 +124,6 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
               ),
             ),
 
-            // --- FOOTER: Indicators & Button ---
             Padding(
               padding: const EdgeInsets.all(24.0),
               child: Column(

@@ -1,7 +1,6 @@
 import 'package:equatable/equatable.dart';
 import '../../domain/entities/auth_entity.dart';
 
-/// Defines the different stages of the authentication lifecycle.
 enum AuthStatus {
   initial,
   loading,
@@ -30,9 +29,6 @@ class AuthState extends Equatable {
       errorMessage: null,
     );
   }
-
-  /// Returns a new instance of [AuthState] with updated fields.
-  /// Use this inside your StateNotifier to trigger UI updates.
   AuthState copyWith({
     AuthStatus? status,
     AuthEntity? user,
@@ -47,8 +43,6 @@ class AuthState extends Equatable {
 
   @override
   List<Object?> get props => [status, user, errorMessage];
-
-  /// Useful for debugging state transitions in the console.
   @override
   bool get stringify => true;
 }

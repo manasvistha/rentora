@@ -6,7 +6,6 @@ import 'package:rentora/features/auth/domain/usecases/logout_usecase.dart';
 import 'package:rentora/features/auth/domain/usecases/signup_usecase.dart';
 import 'package:rentora/features/auth/presentation/state/auth_state.dart';
 
-// Provider definition using the modern NotifierProvider
 final authViewModelProvider = NotifierProvider<AuthViewModel, AuthState>(
   AuthViewModel.new,
 );
@@ -19,19 +18,15 @@ class AuthViewModel extends Notifier<AuthState> {
 
   @override
   AuthState build() {
-    // Initializing use cases from their respective providers
     _signupUseCase = ref.read(signupUseCaseProvider);
     _loginUseCase = ref.read(loginUseCaseProvider);
     _getCurrentUserUseCase = ref.read(getCurrentUserUseCaseProvider);
     _logoutUseCase = ref.read(logoutUseCaseProvider);
-
-    // Auto-check for existing session on app startup/provider initialization
     Future.microtask(() => getCurrentUser());
 
     return const AuthState();
   }
 
-  /// Handles user registration (using your strict 4-field UserEntity)
   Future<void> register(AuthEntity user) async {
     state = state.copyWith(status: AuthStatus.loading);
 
@@ -46,7 +41,6 @@ class AuthViewModel extends Notifier<AuthState> {
     );
   }
 
-  /// Handles user login
   Future<void> login(String email, String password) async {
     state = state.copyWith(status: AuthStatus.loading);
 
@@ -57,20 +51,13 @@ class AuthViewModel extends Notifier<AuthState> {
         status: AuthStatus.error,
         errorMessage: failure.message,
       ),
-      (success) => state = state.copyWith(
-        status: AuthStatus.authenticated,
-        // After successful login, we usually trigger getCurrentUser
-        // to populate the user entity in the state
-      ),
+      (success) => state = state.copyWith(status: AuthStatus.authenticated),
     );
-
-    // If successful, refresh the current user data
     if (state.status == AuthStatus.authenticated) {
       await getCurrentUser();
     }
   }
 
-  /// Checks if a session exists (e.g., on app startup)
   Future<void> getCurrentUser() async {
     state = state.copyWith(status: AuthStatus.loading);
 
@@ -91,7 +78,6 @@ class AuthViewModel extends Notifier<AuthState> {
     );
   }
 
-  /// Handles user logout
   Future<void> logout() async {
     state = state.copyWith(status: AuthStatus.loading);
 
@@ -109,7 +95,6 @@ class AuthViewModel extends Notifier<AuthState> {
     );
   }
 
-  /// Resets error messages
   void clearError() {
     state = state.copyWith(errorMessage: null);
   }

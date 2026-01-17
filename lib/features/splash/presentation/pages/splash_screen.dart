@@ -15,12 +15,10 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   void _navigateToNext() async {
-    // Just a simple timer delay
     await Future.delayed(const Duration(seconds: 3));
 
     if (!mounted) return;
 
-    // Navigate straight to Onboarding
     Navigator.pushReplacementNamed(context, '/onboarding');
   }
 
@@ -35,12 +33,10 @@ class _SplashScreenState extends State<SplashScreen> {
             Image.asset(
               "assets/images/Logo.png",
               height: 150,
-              // Fallback if image is missing
               errorBuilder: (context, error, stackTrace) =>
                   const Icon(Icons.home_work, size: 100, color: Colors.teal),
             ),
             const SizedBox(height: 30),
-            // Optional: Simple loader
             const CircularProgressIndicator(
               color: Color(0xFF4AA6A6),
               strokeWidth: 3,
