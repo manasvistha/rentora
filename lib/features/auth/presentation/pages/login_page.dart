@@ -28,7 +28,6 @@ class _LoginPageState extends ConsumerState<LoginPage> {
 
   @override
   Widget build(BuildContext context) {
-    // 1. Listen for State Changes (Side Effects like SnackBar or Navigation)
     ref.listen<AuthState>(authViewModelProvider, (previous, next) {
       if (next.status == AuthStatus.authenticated) {
         showMySnackBar(
@@ -49,7 +48,6 @@ class _LoginPageState extends ConsumerState<LoginPage> {
       }
     });
 
-    // 2. Watch the state for UI changes (Loading indicators)
     final authState = ref.watch(authViewModelProvider);
     final isLoading = authState.status == AuthStatus.loading;
 
@@ -90,7 +88,6 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                 ),
               ),
               const SizedBox(height: 20),
-              // EMAIL FIELD
               TextFormField(
                 controller: _emailController,
                 keyboardType: TextInputType.emailAddress,
@@ -111,7 +108,6 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                 },
               ),
               const SizedBox(height: 20),
-              // PASSWORD FIELD
               TextFormField(
                 controller: _passController,
                 obscureText: !showPassword,
@@ -155,7 +151,6 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                 ),
               ),
               const SizedBox(height: 25),
-              // LOGIN BUTTON
               SizedBox(
                 width: double.infinity,
                 height: 50,
