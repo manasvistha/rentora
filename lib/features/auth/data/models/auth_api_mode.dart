@@ -6,7 +6,7 @@ class AuthApiModel {
   final String name;
   final String email;
   final String? password;
-  final String? token; // APIs usually return a JWT token on login/signup
+  final String? token;
 
   AuthApiModel({
     this.id,
@@ -16,8 +16,6 @@ class AuthApiModel {
     this.token,
   });
 
-  // Convert JSON from API to this Model
-  // Handles both standard 'id' and MongoDB '_id'
   factory AuthApiModel.fromJson(Map<String, dynamic> json) {
     return AuthApiModel(
       id: json['id'] ?? json['_id'],
@@ -28,18 +26,10 @@ class AuthApiModel {
     );
   }
 
-  // Convert Model to JSON to send to API
   Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'name': name,
-      'email': email,
-      'password': password,
-      // token is usually not sent back to API in the body
-    };
+    return {'id': id, 'name': name, 'email': email, 'password': password};
   }
 
-  // To Entity: Convert this API model to a Domain Entity
   AuthEntity toEntity() {
     return AuthEntity(
       id: id ?? '',
@@ -49,7 +39,6 @@ class AuthApiModel {
     );
   }
 
-  //from entity
   factory AuthApiModel.fromEntity(AuthEntity user) {
     return AuthApiModel(
       id: user.id,
@@ -59,7 +48,6 @@ class AuthApiModel {
     );
   }
 
-  // To Hive Model: Convert this API model to your Persistence Model
   AuthHiveModel toHiveModel() {
     return AuthHiveModel(
       id: id ?? '',
@@ -69,7 +57,6 @@ class AuthApiModel {
     );
   }
 
-  //toentitylist
   static List<AuthEntity> toEntityList(List<AuthApiModel> apiModels) {
     return apiModels.map((model) => model.toEntity()).toList();
   }
