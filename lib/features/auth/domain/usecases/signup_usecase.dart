@@ -1,19 +1,20 @@
 import 'package:dartz/dartz.dart';
-import 'package:injectable/injectable.dart';
-import 'package:rentora/features/auth/domain/entities/user.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:rentora/core/error/failures.dart';
+import 'package:rentora/features/auth/data/repositories/auth_repository.dart';
+import 'package:rentora/features/auth/domain/entities/auth_entity.dart';
 import 'package:rentora/features/auth/domain/repositories/auth_repository.dart';
 
-@injectable
-class SignupUseCase {
-  final AuthRepository repository;
+final signupUseCaseProvider = Provider<SignupUsecase>((ref) {
+  return SignupUsecase(ref.read(authRepositoryProvider));
+});
 
-  SignupUseCase(this.repository);
+class SignupUsecase {
+  final IAuthRepository _repository;
 
-  Future<Either<String, User>> call(
-    String email,
-    String password,
-    String name,
-  ) {
-    return repository.signup(email, password, name);
+  SignupUsecase(this._repository);
+
+  Future<Either<Failure, bool>> execute(AuthEntity user) async {
+    return await _repository.signup(user);
   }
 }

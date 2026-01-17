@@ -1,16 +1,32 @@
 import 'package:flutter/material.dart';
-import 'package:get_it/get_it.dart';
-import 'package:rentora/app.dart';
-import 'package:rentora/core/injection/injection.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+import 'package:rentora/app/app.dart';
 import 'package:rentora/core/services/hive/hive_service.dart';
+
+final sharedPreferencesProvider = Provider<SharedPreferences>((ref) {
+  throw UnimplementedError();
+});
+
+final hiveServiceProvider = Provider<HiveService>((ref) {
+  throw UnimplementedError();
+});
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  configureDependencies();
+  final sharedPrefs = await SharedPreferences.getInstance();
+  final hiveService = HiveService();
+  await hiveService.init();
 
-  // ✅ INIT HIVE ONCE BEFORE UI
-  await GetIt.I<HiveService>().init();
-
-  runApp(const App());
+  runApp(
+    ProviderScope(
+      overrides: [
+        sharedPreferencesProvider.overrideWithValue(sharedPrefs),
+        hiveServiceProvider.overrideWithValue(hiveService),
+      ],
+      child: const App(),
+    ),
+  );
 }

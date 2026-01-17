@@ -1,15 +1,20 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dartz/dartz.dart';
-import 'package:injectable/injectable.dart';
-import 'package:rentora/features/auth/domain/entities/user.dart';
+import 'package:rentora/core/error/failures.dart';
+import 'package:rentora/features/auth/data/repositories/auth_repository.dart';
+import 'package:rentora/features/auth/domain/entities/auth_entity.dart';
 import 'package:rentora/features/auth/domain/repositories/auth_repository.dart';
 
-@injectable
+final getCurrentUserUseCaseProvider = Provider<GetCurrentUserUseCase>((ref) {
+  return GetCurrentUserUseCase(ref.read(authRepositoryProvider));
+});
+
 class GetCurrentUserUseCase {
-  final AuthRepository repository;
+  final IAuthRepository _repository;
 
-  GetCurrentUserUseCase(this.repository);
+  GetCurrentUserUseCase(this._repository);
 
-  Future<Either<String, User?>> call() {
-    return repository.getCurrentUser();
+  Future<Either<Failure, AuthEntity?>> execute() async {
+    return await _repository.getCurrentUser();
   }
 }

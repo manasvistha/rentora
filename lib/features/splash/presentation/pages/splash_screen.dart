@@ -1,7 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import 'package:rentora/features/auth/presentation/view_model/auth_view_model.dart';
-import 'package:rentora/features/auth/presentation/state/auth_state.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -14,26 +11,39 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
     super.initState();
-    _init();
+    _navigateToNext();
   }
 
-  Future<void> _init() async {
-    final auth = context.read<AuthViewModel>();
-    await auth.restoreSession();
-
-    await Future.delayed(const Duration(seconds: 1));
+  void _navigateToNext() async {
+    await Future.delayed(const Duration(seconds: 3));
 
     if (!mounted) return;
 
-    if (auth.state is AuthAuthenticated) {
-      Navigator.pushReplacementNamed(context, '/bottomnavigation');
-    } else {
-      Navigator.pushReplacementNamed(context, '/onboarding');
-    }
+    Navigator.pushReplacementNamed(context, '/onboarding');
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(body: Center(child: Image.asset("assets/images/Logo.png")));
+    return Scaffold(
+      backgroundColor: const Color(0xFFB7E3E4), // Your theme color
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Image.asset(
+              "assets/images/Logo.png",
+              height: 150,
+              errorBuilder: (context, error, stackTrace) =>
+                  const Icon(Icons.home_work, size: 100, color: Colors.teal),
+            ),
+            const SizedBox(height: 30),
+            const CircularProgressIndicator(
+              color: Color(0xFF4AA6A6),
+              strokeWidth: 3,
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
