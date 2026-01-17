@@ -6,17 +6,14 @@ import 'package:rentora/core/services/connectivity/network_info.dart';
 import 'package:rentora/features/auth/data/datasources/auth_datasource.dart';
 import 'package:rentora/features/auth/data/datasources/local/auth_local_datasource.dart';
 import 'package:rentora/features/auth/data/datasources/remote/auth_remote_datasource.dart';
-import 'package:rentora/features/auth/data/models/auth_api_mode.dart';
+import 'package:rentora/features/auth/data/models/auth_api_model.dart';
 import 'package:rentora/features/auth/data/models/auth_hive_model.dart';
 import 'package:rentora/features/auth/domain/entities/auth_entity.dart';
 import 'package:rentora/features/auth/domain/repositories/auth_repository.dart';
 
-// Provider definition
 final authRepositoryProvider = Provider<IAuthRepository>((ref) {
   final authLocalDataSource = ref.read(authLocalDataSourceProvider);
-  final authRemoteDataSource = ref.read(
-    authRemoteDatasourceProvider,
-  ); // lowercase 's'
+  final authRemoteDataSource = ref.read(authRemoteDatasourceProvider);
   final networkInfo = ref.read(networkInfoProvider);
 
   return AuthRepository(
@@ -43,7 +40,6 @@ class AuthRepository implements IAuthRepository {
   Future<Either<Failure, bool>> signup(AuthEntity user) async {
     if (await _networkInfo.isConnected) {
       try {
-        // Map domain entity (4 fields) to API model
         final apiModel = AuthApiModel.fromEntity(user);
         await _authRemoteDataSource.register(apiModel);
         return const Right(true);
@@ -59,7 +55,6 @@ class AuthRepository implements IAuthRepository {
       }
     } else {
       try {
-        // Offline registration: Check if user exists locally first
         final existingUser = await _authLocalDataSource.getUserByEmail(
           user.email,
         );
@@ -68,8 +63,6 @@ class AuthRepository implements IAuthRepository {
             LocalDatabaseFailure(message: "User already exists locally"),
           );
         }
-
-        // Map domain entity to strict 4-field Hive model
         final hiveModel = AuthHiveModel.fromEntity(user);
         await _authLocalDataSource.register(hiveModel);
         return const Right(true);
@@ -88,15 +81,12 @@ class AuthRepository implements IAuthRepository {
       try {
         final apiModel = await _authRemoteDataSource.login(email, password);
 
-        // Map API response to strict 4-field Hive model
         final authHiveModel = AuthHiveModel(
           id: apiModel!.id ?? '',
           name: apiModel.name,
           email: apiModel.email,
           password: password,
         );
-
-        // Sync with local database
         await _authLocalDataSource.register(authHiveModel);
 
         return Right(authHiveModel.toEntity());
@@ -108,7 +98,6 @@ class AuthRepository implements IAuthRepository {
         return Left(ApiFailure(message: e.toString()));
       }
     } else {
-      // Offline login via Hive
       try {
         final model = await _authLocalDataSource.getUserByEmail(email);
         if (model != null && model.password == password) {
@@ -128,7 +117,6 @@ class AuthRepository implements IAuthRepository {
   @override
   Future<Either<Failure, AuthEntity?>> getCurrentUser() async {
     try {
-      // Logic assumes you've stored the current email in a session
       final model = await _authLocalDataSource.getCurrentUser();
       if (model != null) {
         return Right(model.toEntity());
@@ -142,7 +130,6 @@ class AuthRepository implements IAuthRepository {
   @override
   Future<Either<Failure, bool>> logout() async {
     try {
-      // In a real scenario, you'd clear specific local session keys here
       await _authLocalDataSource.logout();
       return const Right(true);
     } catch (e) {

@@ -4,7 +4,7 @@ import 'package:rentora/core/api/api_client.dart';
 import 'package:rentora/core/api/api_endpoints.dart';
 import 'package:rentora/core/services/storage/user_session_service.dart';
 import 'package:rentora/features/auth/data/datasources/auth_datasource.dart';
-import 'package:rentora/features/auth/data/models/auth_api_mode.dart';
+import 'package:rentora/features/auth/data/models/auth_api_model.dart';
 
 final authRemoteDatasourceProvider = Provider<IAuthRemoteDataSource>((ref) {
   final apiClient = ref.read(apiClientProvider);

@@ -1,4 +1,4 @@
-import 'package:rentora/features/auth/data/models/auth_api_mode.dart';
+import 'package:rentora/features/auth/data/models/auth_api_model.dart';
 import 'package:rentora/features/auth/data/models/auth_hive_model.dart';
 
 abstract interface class IAuthLocalDataSource {
