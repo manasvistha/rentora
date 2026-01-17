@@ -28,7 +28,6 @@ class AuthRemoteDatasource implements IAuthRemoteDataSource {
   @override
   Future<AuthApiModel> register(AuthApiModel user) async {
     try {
-      // 1. Prepare data - Zod DTO expects 'confirmPass'
       final Map<String, dynamic> registrationData = user.toJson();
       registrationData['confirmPass'] = user.password;
 
@@ -37,7 +36,6 @@ class AuthRemoteDatasource implements IAuthRemoteDataSource {
         data: registrationData,
       );
 
-      // 2. Map response (Backend returns: { success: true, user: { ... } })
       if (response.statusCode == 201) {
         final data = response.data['user'] as Map<String, dynamic>;
         return AuthApiModel.fromJson(data);
@@ -45,7 +43,6 @@ class AuthRemoteDatasource implements IAuthRemoteDataSource {
         throw Exception("Failed to register: ${response.data['message']}");
       }
     } on DioException catch (e) {
-      // Handle Zod validation errors or 400 Bad Request
       final errorMessage = e.response?.data['message'] ?? e.message;
       throw Exception(errorMessage);
     }
@@ -58,15 +55,12 @@ class AuthRemoteDatasource implements IAuthRemoteDataSource {
         ApiEndpoints.login,
         data: {"email": email, "password": password},
       );
-
-      // 3. Match Backend: { success: true, token: "...", data: { user_object } }
       if (response.statusCode == 200 && response.data['data'] != null) {
         final userData = response.data['data'] as Map<String, dynamic>;
         final String token = response.data['token'];
 
         final user = AuthApiModel.fromJson(userData);
 
-        // 4. Persistence: Save to Hive/Secure Storage via Session Service
         await _userSessionService.saveUserSession(
           userId: user.id ?? '',
           email: user.email,
