@@ -4,7 +4,7 @@ class AuthEntity extends Equatable {
   final String id;
   final String email;
   final String name;
-  final String? password; // Optional for security
+  final String? password; 
 
   const AuthEntity({
     required this.id,

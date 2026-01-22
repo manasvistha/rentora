@@ -61,8 +61,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       body: SafeArea(
         child: Column(
           children: [
+            // Header with Logo and Skip
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -73,6 +74,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                       'RENTORA',
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
+                        fontSize: 20,
                         color: Color(0xFF4AA6A6),
                       ),
                     ),
@@ -80,15 +82,23 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                   if (!isLastPage)
                     TextButton(
                       onPressed: isLoading ? null : _finishOnboarding,
+                      style: TextButton.styleFrom(
+                        overlayColor: const Color(0xFF4AA6A6).withOpacity(0.1),
+                      ),
                       child: const Text(
                         "Skip",
-                        style: TextStyle(color: Colors.grey, fontSize: 16),
+                        style: TextStyle(
+                          color: Colors.grey,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
                     ),
                 ],
               ),
             ),
 
+            // Page content
             Expanded(
               child: PageView.builder(
                 controller: _pageController,
@@ -97,72 +107,106 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                     setState(() => _currentPage = page),
                 itemBuilder: (context, i) {
                   final data = OnboardingData.pages[i];
-                  return Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Image.asset(data.imagePath, height: 280),
-                      const SizedBox(height: 40),
-                      Text(
-                        data.title,
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Container(
+                          height: 280,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(20),
+                            color: Colors.grey.shade100,
+                          ),
+                          child: Image.asset(
+                            data.imagePath,
+                            height: 280,
+                            fit: BoxFit.contain,
+                          ),
                         ),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.all(20.0),
-                        child: Text(
+                        const SizedBox(height: 48),
+                        Text(
+                          data.title,
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            fontSize: 28,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black87,
+                            height: 1.2,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
                           data.description,
                           textAlign: TextAlign.center,
-                          style: const TextStyle(color: Colors.black54),
+                          style: const TextStyle(
+                            color: Colors.black54,
+                            fontSize: 16,
+                            height: 1.5,
+                            fontWeight: FontWeight.w400,
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   );
                 },
               ),
             ),
 
+            // Bottom navigation
             Padding(
-              padding: const EdgeInsets.all(24.0),
+              padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 32),
               child: Column(
                 children: [
+                  // Page indicators
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: List.generate(
                       OnboardingData.pages.length,
-                      (index) => AnimatedContainer(
-                        duration: const Duration(milliseconds: 200),
-                        margin: const EdgeInsets.only(right: 5),
-                        height: 10,
-                        width: _currentPage == index ? 25 : 10,
-                        decoration: BoxDecoration(
-                          color: _currentPage == index
-                              ? const Color(0xFF4AA6A6)
-                              : Colors.grey.shade300,
-                          borderRadius: BorderRadius.circular(5),
+                      (index) => Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 4.0),
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 300),
+                          height: 8,
+                          width: _currentPage == index ? 28 : 8,
+                          decoration: BoxDecoration(
+                            color: _currentPage == index
+                                ? const Color(0xFF4AA6A6)
+                                : Colors.grey.shade300,
+                            borderRadius: BorderRadius.circular(4),
+                          ),
                         ),
                       ),
                     ),
                   ),
-                  const SizedBox(height: 30),
+                  const SizedBox(height: 32),
+                  // Next/Get Started button
                   ElevatedButton(
                     onPressed: () => _handleNext(isLoading),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF4AA6A6),
-                      minimumSize: const Size(double.infinity, 55),
+                      minimumSize: const Size(double.infinity, 56),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(15),
+                        borderRadius: BorderRadius.circular(16),
                       ),
+                      elevation: 0,
                     ),
                     child: isLoading
-                        ? const CircularProgressIndicator(color: Colors.white)
+                        ? const SizedBox(
+                            height: 24,
+                            width: 24,
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 2.5,
+                            ),
+                          )
                         : Text(
                             isLastPage ? "Get Started" : "Next",
                             style: const TextStyle(
                               color: Colors.white,
                               fontSize: 18,
+                              fontWeight: FontWeight.w600,
+                              letterSpacing: 0.5,
                             ),
                           ),
                   ),
