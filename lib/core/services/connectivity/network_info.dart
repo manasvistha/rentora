@@ -17,16 +17,12 @@ class NetworkInfo implements INetworkInfo {
   NetworkInfo(this._connectivity);
 
   @override
-  // TODO: implement isConnected
   Future<bool> get isConnected async {
-    //
     final result = await _connectivity
         .checkConnectivity(); // is the internet or data is on or not
     if (result.contains(ConnectivityResult.none)) {
       return false;
     }
-
-    // return await _sacchaikaiInternetChakiNai();
 
     return true;
   }

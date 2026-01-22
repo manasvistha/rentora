@@ -99,6 +99,13 @@ dev_dependencies:
   # Testing
   mocktail: ^1.0.3
   fake_async: ^1.3.1
+  flutter_launcher_icons: ^0.14.4
+
+flutter_launcher_icons:
+  android: "launcher_icon"
+  ios: false
+  image_path: assets/images/Logo.png
+  min_sdk_android: 21 
 
 # The following section is specific to Flutter packages.
 flutter:
@@ -106,7 +113,6 @@ flutter:
   # included with your application, so that you can use the icons in
   # the material Icons class.
   uses-material-design: true
-  
 
   # To add assets to your application, add an assets section, like this:
   assets:
@@ -124,16 +130,16 @@ flutter:
   # list giving the asset and other descriptors for the font. For
   # example:
   fonts:
-     - family: OpenSans Regular
-       fonts:
+    - family: OpenSans Regular
+      fonts:
         - asset: assets/fonts/OpenSans-Regular.ttf
 
-     - family: OpenSans Bold
-       fonts:
+    - family: OpenSans Bold
+      fonts:
         - asset: assets/fonts/OpenSans-Bold.ttf
 
-     - family: OpenSans Italic
-       fonts:
+    - family: OpenSans Italic
+      fonts:
         - asset: assets/fonts/OpenSans-Italic.ttf
   #       - asset: fonts/Schyler-Italic.ttf
   #         style: italic
