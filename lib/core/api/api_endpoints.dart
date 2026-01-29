@@ -18,6 +18,7 @@ class ApiEndpoints {
   static const String login = 'auth/login'; // Becomes: .../api/auth/login
   static const String register =
       'auth/register'; // Becomes: .../api/auth/register
+  static const String profile = 'auth/profile'; // Becomes: .../api/auth/profile
 
   // If you add a get user route in your auth.routes.ts later:
   static const String users = 'auth/';

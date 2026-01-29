@@ -1,8 +1,14 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/legacy.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:rentora/features/auth/domain/entities/auth_entity.dart';
 import 'package:rentora/features/auth/presentation/state/auth_state.dart';
 import 'package:rentora/features/auth/presentation/view_model/auth_view_model.dart';
+
+// Provider to hold selected profile image
+final signupProfileImageProvider = StateProvider<File?>((ref) => null);
 
 class SignupPage extends ConsumerStatefulWidget {
   const SignupPage({super.key});
@@ -31,6 +37,50 @@ class _SignupPageState extends ConsumerState<SignupPage> {
     super.dispose();
   }
 
+  Future<void> _pickImage() async {
+    final ImagePicker picker = ImagePicker();
+
+    final source = await showDialog<ImageSource>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Choose Image Source'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const Icon(Icons.camera_alt, color: Color(0xFF4AA6A6)),
+                title: const Text('Camera'),
+                onTap: () => Navigator.pop(context, ImageSource.camera),
+              ),
+              ListTile(
+                leading: const Icon(
+                  Icons.photo_library,
+                  color: Color(0xFF4AA6A6),
+                ),
+                title: const Text('Gallery'),
+                onTap: () => Navigator.pop(context, ImageSource.gallery),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+
+    if (source != null) {
+      final XFile? image = await picker.pickImage(
+        source: source,
+        maxWidth: 512,
+        maxHeight: 512,
+        imageQuality: 75,
+      );
+
+      if (image != null) {
+        ref.read(signupProfileImageProvider.notifier).state = File(image.path);
+      }
+    }
+  }
+
   void _handleSignup() {
     if (_formKey.currentState!.validate()) {
       final user = AuthEntity(
@@ -40,15 +90,29 @@ class _SignupPageState extends ConsumerState<SignupPage> {
         password: _passController.text.trim(),
       );
 
-      ref.read(authViewModelProvider.notifier).register(user);
+      final profileImage = ref.read(signupProfileImageProvider);
+      final confirmPassword = _confirmPassController.text.trim();
+
+      ref
+          .read(authViewModelProvider.notifier)
+          .register(
+            user,
+            profileImage: profileImage,
+            confirmPassword: confirmPassword,
+          );
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final authState = ref.watch(authViewModelProvider);
+    final profileImage = ref.watch(signupProfileImageProvider);
+
     ref.listen<AuthState>(authViewModelProvider, (previous, next) {
       if (next.status == AuthStatus.registered) {
+        // Clear the profile image
+        ref.read(signupProfileImageProvider.notifier).state = null;
+
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text("Account Created Successfully! Please Login."),
@@ -88,8 +152,60 @@ class _SignupPageState extends ConsumerState<SignupPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Center(child: Image.asset("assets/images/Logo.png", height: 120)),
-              const SizedBox(height: 30),
+              Center(child: Image.asset("assets/images/Logo.png", height: 100)),
+              const SizedBox(height: 20),
+
+              // Profile Picture Selection
+              Center(
+                child: GestureDetector(
+                  onTap: _pickImage,
+                  child: Stack(
+                    children: [
+                      CircleAvatar(
+                        radius: 60,
+                        backgroundColor: const Color(0xFF4AA6A6),
+                        backgroundImage: profileImage != null
+                            ? FileImage(profileImage)
+                            : null,
+                        child: profileImage == null
+                            ? const Icon(
+                                Icons.person,
+                                size: 60,
+                                color: Colors.white,
+                              )
+                            : null,
+                      ),
+                      Positioned(
+                        bottom: 0,
+                        right: 0,
+                        child: Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF4AA6A6),
+                            shape: BoxShape.circle,
+                            border: Border.all(color: Colors.white, width: 2),
+                          ),
+                          child: const Icon(
+                            Icons.camera_alt,
+                            size: 20,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 20),
+              const Center(
+                child: Text(
+                  "Tap to add profile picture",
+                  style: TextStyle(color: Color(0xFF4AA6A6), fontSize: 14),
+                ),
+              ),
+
+              const SizedBox(height: 20),
               _buildTextField(
                 controller: _nameController,
                 label: "Full Name",
@@ -171,7 +287,6 @@ class _SignupPageState extends ConsumerState<SignupPage> {
     );
   }
 
-  // Reusable TextField Builder to keep the code clean
   Widget _buildTextField({
     required TextEditingController controller,
     required String label,
