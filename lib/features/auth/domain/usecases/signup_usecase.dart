@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:dartz/dartz.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:rentora/core/error/failures.dart';
@@ -14,7 +15,15 @@ class SignupUsecase {
 
   SignupUsecase(this._repository);
 
-  Future<Either<Failure, bool>> execute(AuthEntity user) async {
-    return await _repository.signup(user);
+  Future<Either<Failure, bool>> execute(
+    AuthEntity user, {
+    File? profileImage,
+    String? confirmPassword,
+  }) async {
+    return await _repository.signup(
+      user,
+      profileImage: profileImage,
+      confirmPassword: confirmPassword,
+    ); // UPDATED
   }
 }

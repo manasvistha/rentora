@@ -1,4 +1,6 @@
+import 'dart:io';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:rentora/features/auth/data/repositories/auth_repository.dart';
 import 'package:rentora/features/auth/domain/entities/auth_entity.dart';
 import 'package:rentora/features/auth/domain/usecases/get_current_user_usecase.dart';
 import 'package:rentora/features/auth/domain/usecases/login_usecase.dart';
@@ -27,10 +29,17 @@ class AuthViewModel extends Notifier<AuthState> {
     return const AuthState();
   }
 
-  Future<void> register(AuthEntity user) async {
+  Future<void> register(
+    AuthEntity user, {
+    File? profileImage,
+    String? confirmPassword,
+  }) async {
     state = state.copyWith(status: AuthStatus.loading);
 
-    final result = await _signupUseCase.execute(user);
+    final result = await _signupUseCase.execute(
+      user,
+      confirmPassword: confirmPassword,
+    );
 
     result.fold(
       (failure) => state = state.copyWith(
@@ -97,6 +106,22 @@ class AuthViewModel extends Notifier<AuthState> {
 
   void clearError() {
     state = state.copyWith(errorMessage: null);
+  }
+
+  Future<void> uploadPhoto(File photo) async {
+    try {
+      final repository = ref.read(authRepositoryProvider);
+      await repository.uploadPhoto(photo);
+      
+      // Refresh user data to get the updated profile picture
+      await getCurrentUser();
+    } catch (e) {
+      state = state.copyWith(
+        status: AuthStatus.error,
+        errorMessage: e.toString(),
+      );
+      rethrow;
+    }
   }
 
   Future<void> restoreSession() async {}

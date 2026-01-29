@@ -60,7 +60,7 @@ class AuthLocalDataSource implements IAuthLocalDataSource {
   }
 
   @override
-  Future<bool> logout() async {
+  Future<bool> logOut() async {
     try {
       await _userSessionService
           .deleteSession(); // Using your service's delete method
