@@ -42,4 +42,19 @@ void main() {
     expect(result.email, 'test@example.com');
     expect(result.name, 'Test User');
   });
+
+  test('should return true if email is already registered', () async {
+    final user = AuthHiveModel(
+      id: '2',
+      email: 'email@test.com',
+      password: '123456',
+      name: 'Email User',
+    );
+
+    await hiveService.register(user);
+
+    final result = hiveService.isEmailRegistered('email@test.com');
+
+    expect(result, true);
+  });
 }
