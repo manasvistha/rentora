@@ -7,7 +7,6 @@ import 'package:rentora/core/api/api_endpoints.dart';
 import 'package:rentora/features/auth/presentation/view_model/auth_view_model.dart';
 import 'package:rentora/features/dashboard/presentation/pages/edit_profile_screen.dart';
 
-// State provider to hold the selected image
 final profileImageProvider = StateProvider<File?>((ref) => null);
 
 class ProfileScreen extends ConsumerWidget {
@@ -16,7 +15,6 @@ class ProfileScreen extends ConsumerWidget {
   Future<void> _pickImage(BuildContext context, WidgetRef ref) async {
     final ImagePicker picker = ImagePicker();
 
-    // Show dialog to choose camera or gallery
     final source = await showDialog<ImageSource>(
       context: context,
       builder: (BuildContext context) {
@@ -58,8 +56,6 @@ class ProfileScreen extends ConsumerWidget {
       if (image != null) {
         final imageFile = File(image.path);
         ref.read(profileImageProvider.notifier).state = imageFile;
-
-        // Upload to backend
         try {
           final authViewModel = ref.read(authViewModelProvider.notifier);
           await authViewModel.uploadPhoto(imageFile);
@@ -94,7 +90,6 @@ class ProfileScreen extends ConsumerWidget {
     final authState = ref.watch(authViewModelProvider);
     final user = authState.user;
 
-    // Construct full URL for profile picture
     final profilePictureUrl = user?.profilePicture != null
         ? '${ApiEndpoints.baseUrl.replaceAll('/api/', '')}${user!.profilePicture}'
         : null;
@@ -103,7 +98,6 @@ class ProfileScreen extends ConsumerWidget {
       backgroundColor: Colors.grey[50],
       body: Column(
         children: [
-          // Header with gradient background
           Container(
             height: 280,
             decoration: const BoxDecoration(
@@ -115,15 +109,12 @@ class ProfileScreen extends ConsumerWidget {
             ),
             child: Stack(
               children: [
-                // Back button
                 Positioned(
                   top: 40,
                   left: 16,
                   child: IconButton(
                     icon: const Icon(Icons.arrow_back, color: Colors.white),
-                    onPressed: () {
-                      // Optional: Add navigation if needed
-                    },
+                    onPressed: () {},
                   ),
                 ),
 
@@ -279,9 +270,7 @@ class ProfileScreen extends ConsumerWidget {
                       context,
                       icon: Icons.help_outline,
                       title: "About us",
-                      onTap: () {
-                        // Navigate to About Us page
-                      },
+                      onTap: () {},
                     ),
 
                     const SizedBox(height: 12),
@@ -291,9 +280,7 @@ class ProfileScreen extends ConsumerWidget {
                       context,
                       icon: Icons.headset_mic_outlined,
                       title: "Get Help",
-                      onTap: () {
-                        // Navigate to Help page
-                      },
+                      onTap: () {},
                     ),
 
                     const SizedBox(height: 12),
