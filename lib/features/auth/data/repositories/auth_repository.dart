@@ -209,4 +209,49 @@ class AuthRepository implements IAuthRepository {
       );
     }
   }
+
+  @override
+  Future<Either<Failure, bool>> updateUser(AuthEntity user) async {
+    if (await _networkInfo.isConnected) {
+      try {
+        final apiModel = AuthApiModel.fromEntity(user);
+        final success = await _authRemoteDataSource.updateUser(apiModel);
+
+        if (success) {
+          // Update local database
+          final hiveModel = apiModel.toHiveModel();
+          await _authLocalDataSource.updateUser(hiveModel);
+
+          // Update session if email or name changed
+          if (apiModel.id != null) {
+            await _sessionService.saveUserSession(
+              userId: apiModel.id!,
+              email: apiModel.email,
+              name: apiModel.name,
+              token: (await _sessionService.getToken()) ?? '',
+            );
+          }
+        }
+
+        return Right(success);
+      } on DioException catch (e) {
+        return Left(
+          ApiFailure(
+            message: e.response?.data['message'] ?? 'Failed to update user',
+            statusCode: e.response?.statusCode,
+          ),
+        );
+      } catch (e) {
+        return Left(ApiFailure(message: e.toString()));
+      }
+    } else {
+      try {
+        final hiveModel = AuthHiveModel.fromEntity(user);
+        final success = await _authLocalDataSource.updateUser(hiveModel);
+        return Right(success);
+      } catch (e) {
+        return Left(LocalDatabaseFailure(message: e.toString()));
+      }
+    }
+  }
 }

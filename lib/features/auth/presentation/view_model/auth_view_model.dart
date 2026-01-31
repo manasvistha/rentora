@@ -6,6 +6,7 @@ import 'package:rentora/features/auth/domain/usecases/get_current_user_usecase.d
 import 'package:rentora/features/auth/domain/usecases/login_usecase.dart';
 import 'package:rentora/features/auth/domain/usecases/logout_usecase.dart';
 import 'package:rentora/features/auth/domain/usecases/signup_usecase.dart';
+import 'package:rentora/features/auth/domain/usecases/update_user_usecase.dart';
 import 'package:rentora/features/auth/presentation/state/auth_state.dart';
 
 final authViewModelProvider = NotifierProvider<AuthViewModel, AuthState>(
@@ -17,6 +18,7 @@ class AuthViewModel extends Notifier<AuthState> {
   late final LoginUseCase _loginUseCase;
   late final GetCurrentUserUseCase _getCurrentUserUseCase;
   late final LogoutUseCase _logoutUseCase;
+  late final UpdateUserUseCase _updateUserUseCase;
 
   @override
   AuthState build() {
@@ -24,6 +26,7 @@ class AuthViewModel extends Notifier<AuthState> {
     _loginUseCase = ref.read(loginUseCaseProvider);
     _getCurrentUserUseCase = ref.read(getCurrentUserUseCaseProvider);
     _logoutUseCase = ref.read(logoutUseCaseProvider);
+    _updateUserUseCase = ref.read(updateUserUseCaseProvider);
     Future.microtask(() => getCurrentUser());
 
     return const AuthState();
@@ -112,7 +115,7 @@ class AuthViewModel extends Notifier<AuthState> {
     try {
       final repository = ref.read(authRepositoryProvider);
       await repository.uploadPhoto(photo);
-      
+
       // Refresh user data to get the updated profile picture
       await getCurrentUser();
     } catch (e) {
@@ -124,5 +127,32 @@ class AuthViewModel extends Notifier<AuthState> {
     }
   }
 
-  Future<void> restoreSession() async {}
+  Future<void> updateUser(AuthEntity user) async {
+    state = state.copyWith(status: AuthStatus.loading);
+
+    final result = await _updateUserUseCase.execute(user);
+
+    result.fold(
+      (failure) => state = state.copyWith(
+        status: AuthStatus.error,
+        errorMessage: failure.message,
+      ),
+      (success) async {
+        if (success) {
+          // Refresh user data
+          await getCurrentUser();
+        } else {
+          state = state.copyWith(
+            status: AuthStatus.error,
+            errorMessage: 'Failed to update profile',
+          );
+        }
+      },
+    );
+  }
+
+  Future<void> restoreSession() async {
+    // Try to restore user session from stored data
+    await getCurrentUser();
+  }
 }

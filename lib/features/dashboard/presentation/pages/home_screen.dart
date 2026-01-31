@@ -1,18 +1,11 @@
 import 'package:flutter/material.dart';
+import '../../../auth/presentation/widgets/home_content.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(automaticallyImplyLeading: false),
-      body: const Center(
-        child: Text(
-          "Welcome to Home page",
-          style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-        ),
-      ),
-    );
+    return const Scaffold(body: Center(child: HomeContent()));
   }
 }

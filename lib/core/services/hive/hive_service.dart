@@ -9,25 +9,21 @@ final hiveServiceProvider = Provider<HiveService>((ref) {
 });
 
 class HiveService {
-  // Initialize Hive
   Future<void> init() async {
     final directory = await getApplicationDocumentsDirectory();
     final path = '${directory.path}/${HiveTableConstant.dbName}';
     Hive.init(path);
 
-    // Register adapter
     _registerAdapter();
     await _openBoxes();
   }
 
   void _registerAdapter() {
-    // Note: TypeId (0) inside AuthHiveModelAdapter must match HiveTableConstant.userTypeId
     if (!Hive.isAdapterRegistered(HiveTableConstant.userTypeId)) {
       Hive.registerAdapter(AuthHiveModelAdapter());
     }
   }
 
-  // Box management
   Future<void> _openBoxes() async {
     await Hive.openBox<AuthHiveModel>(HiveTableConstant.userTable);
   }
@@ -35,16 +31,12 @@ class HiveService {
   Box<AuthHiveModel> get _userBox =>
       Hive.box<AuthHiveModel>(HiveTableConstant.userTable);
 
-  // ======================= Auth Queries =========================
-
   Future<void> register(AuthHiveModel user) async {
-    // Using user.id as the key for the Hive box
     await _userBox.put(user.id, user);
   }
 
   AuthHiveModel? login(String email, String password) {
     try {
-      // Local login check against plain passwords stored in Hive
       return _userBox.values.firstWhere(
         (user) => user.email == email && user.password == password,
       );
@@ -81,7 +73,6 @@ class HiveService {
     await _userBox.delete(id);
   }
 
-  // Clear all auth data (useful for testing or total reset)
   Future<void> clearAll() async {
     await _userBox.clear();
   }

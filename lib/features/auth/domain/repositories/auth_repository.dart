@@ -14,6 +14,7 @@ abstract class IAuthRepository {
 
   Future<Either<Failure, AuthEntity?>> getCurrentUser();
   Future<Either<Failure, bool>> uploadPhoto(File photo);
+  Future<Either<Failure, bool>> updateUser(AuthEntity user);
 
   Future<Either<Failure, bool>> logout();
 }

@@ -7,7 +7,7 @@ class AuthApiModel {
   final String email;
   final String? password;
   final String? token;
-  final String? profilePicture; // NEW FIELD
+  final String? profilePicture;
 
   AuthApiModel({
     this.id,
@@ -15,7 +15,7 @@ class AuthApiModel {
     required this.email,
     this.password,
     this.token,
-    this.profilePicture, // NEW FIELD
+    this.profilePicture,
   });
 
   factory AuthApiModel.fromJson(Map<String, dynamic> json) {
@@ -25,7 +25,7 @@ class AuthApiModel {
       email: json['email'] ?? '',
       password: json['password'],
       token: json['token'],
-      profilePicture: json['profilePicture'] ?? json['image'], // NEW FIELD
+      profilePicture: json['profilePicture'] ?? json['image'],
     );
   }
 
@@ -35,7 +35,7 @@ class AuthApiModel {
       'name': name,
       'email': email,
       'password': password,
-      'profilePicture': profilePicture, // NEW FIELD
+      'profilePicture': profilePicture,
     };
   }
 
@@ -45,7 +45,7 @@ class AuthApiModel {
       name: name,
       email: email,
       password: password ?? '',
-      profilePicture: profilePicture, // NEW FIELD
+      profilePicture: profilePicture,
     );
   }
 
@@ -55,7 +55,7 @@ class AuthApiModel {
       name: user.name,
       email: user.email,
       password: user.password,
-      profilePicture: user.profilePicture, // NEW FIELD
+      profilePicture: user.profilePicture,
     );
   }
 
@@ -65,7 +65,7 @@ class AuthApiModel {
       name: name,
       email: email,
       password: password ?? '',
-      profilePicture: profilePicture, // NEW FIELD
+      profilePicture: profilePicture,
     );
   }
 
