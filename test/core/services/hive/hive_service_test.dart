@@ -57,4 +57,19 @@ void main() {
 
     expect(result, true);
   });
+
+  test('should return null when login credentials are invalid', () async {
+    final user = AuthHiveModel(
+      id: '1',
+      email: 'user@test.com',
+      password: 'correct123',
+      name: 'Wrong Login',
+    );
+
+    await hiveService.register(user);
+
+    final result = hiveService.login('user@test.com', 'wrong123');
+
+    expect(result, isNull);
+  });
 }
