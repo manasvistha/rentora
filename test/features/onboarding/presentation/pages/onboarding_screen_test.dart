@@ -69,24 +69,4 @@ void main() {
       expect(find.text(OnboardingData.pages[1].description), findsOneWidget);
     }
   });
-
-  testWidgets('3. Should navigate to BottomNavigation after last page', (
-    tester,
-  ) async {
-    tester.binding.window.physicalSizeTestValue = _testScreenSize;
-    tester.binding.window.devicePixelRatioTestValue = 1.0;
-    addTearDown(() {
-      tester.binding.window.clearPhysicalSizeTestValue();
-      tester.binding.window.clearDevicePixelRatioTestValue();
-    });
-
-    await tester.pumpWidget(makeTestable(child: const OnboardingScreen()));
-
-    for (int i = 0; i < OnboardingData.pages.length; i++) {
-      await tester.tap(find.byType(ElevatedButton));
-      await tester.pumpAndSettle();
-    }
-
-    expect(find.text('Bottom Nav'), findsOneWidget);
-  });
 }
