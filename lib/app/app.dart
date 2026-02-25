@@ -14,9 +14,6 @@ class App extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // In Riverpod, we wrap the MaterialApp in a ProviderScope (usually done in main.dart)
-    // If you haven't wrapped it in main.dart, you can do it here,
-    // but ProviderScope should only exist ONCE at the top of the tree.
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Rentora',

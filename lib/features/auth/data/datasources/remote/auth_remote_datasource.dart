@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:rentora/core/api/api_client.dart';
 import 'package:rentora/core/api/api_endpoints.dart';
@@ -17,6 +18,25 @@ class AuthRemoteDataSourceImpl implements IAuthRemoteDataSource {
   final Dio _dio;
 
   AuthRemoteDataSourceImpl(this._dio);
+
+  String _resolveDioMessage(DioException e, String fallback) {
+    if (e.type == DioExceptionType.connectionTimeout ||
+        e.type == DioExceptionType.sendTimeout ||
+        e.type == DioExceptionType.receiveTimeout ||
+        e.type == DioExceptionType.connectionError) {
+      return 'Cannot reach server. Verify backend is running and API_BASE_URL is correct.';
+    }
+
+    final responseData = e.response?.data;
+    if (responseData is Map<String, dynamic>) {
+      final message = responseData['message'];
+      if (message is String && message.isNotEmpty) {
+        return message;
+      }
+    }
+
+    return fallback;
+  }
 
   @override
   Future<AuthApiModel> register(
@@ -39,9 +59,9 @@ class AuthRemoteDataSourceImpl implements IAuthRemoteDataSource {
 
       return AuthApiModel.fromJson(response.data['user'] ?? response.data);
     } on DioException catch (e) {
-      print('Registration Error: ${e.response?.statusCode}');
-      print('Response: ${e.response?.data}');
-      throw Exception(e.response?.data['message'] ?? 'Registration failed');
+      debugPrint('Registration Error: ${e.response?.statusCode}');
+      debugPrint('Response: ${e.response?.data}');
+      throw Exception(_resolveDioMessage(e, 'Registration failed'));
     }
   }
 
@@ -66,9 +86,9 @@ class AuthRemoteDataSourceImpl implements IAuthRemoteDataSource {
 
       return AuthApiModel.fromJson(response.data);
     } on DioException catch (e) {
-      print('Login Error: ${e.response?.statusCode}');
-      print('Response: ${e.response?.data}');
-      throw Exception(e.response?.data['message'] ?? 'Login failed');
+      debugPrint('Login Error: ${e.response?.statusCode}');
+      debugPrint('Response: ${e.response?.data}');
+      throw Exception(_resolveDioMessage(e, 'Login failed'));
     }
   }
 
@@ -87,17 +107,15 @@ class AuthRemoteDataSourceImpl implements IAuthRemoteDataSource {
     try {
       final response = await _dio.get(ApiEndpoints.profile);
       final userData = response.data['data'] ?? response.data;
-      
-      print('📸 Profile data received: $userData');
-      print('📸 ProfilePicture field: ${userData['profilePicture']}');
-      
+
+      debugPrint('Profile data received: $userData');
+      debugPrint('ProfilePicture field: ${userData['profilePicture']}');
+
       return AuthApiModel.fromJson(userData);
     } on DioException catch (e) {
-      print('Get Current User Error: ${e.response?.statusCode}');
-      print('Response: ${e.response?.data}');
-      throw Exception(
-        e.response?.data['message'] ?? 'Failed to get current user',
-      );
+      debugPrint('Get Current User Error: ${e.response?.statusCode}');
+      debugPrint('Response: ${e.response?.data}');
+      throw Exception(_resolveDioMessage(e, 'Failed to get current user'));
     }
   }
 

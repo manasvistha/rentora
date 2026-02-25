@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:rentora/features/auth/data/repositories/auth_repository.dart';
+import 'package:rentora/core/services/storage/user_session_service.dart';
 import 'package:rentora/features/auth/domain/entities/auth_entity.dart';
 import 'package:rentora/features/auth/domain/usecases/get_current_user_usecase.dart';
 import 'package:rentora/features/auth/domain/usecases/login_usecase.dart';
@@ -19,6 +20,7 @@ class AuthViewModel extends Notifier<AuthState> {
   late final GetCurrentUserUseCase _getCurrentUserUseCase;
   late final LogoutUseCase _logoutUseCase;
   late final UpdateUserUseCase _updateUserUseCase;
+  late final UserSessionService _sessionService;
 
   @override
   AuthState build() {
@@ -27,7 +29,7 @@ class AuthViewModel extends Notifier<AuthState> {
     _getCurrentUserUseCase = ref.read(getCurrentUserUseCaseProvider);
     _logoutUseCase = ref.read(logoutUseCaseProvider);
     _updateUserUseCase = ref.read(updateUserUseCaseProvider);
-    Future.microtask(() => getCurrentUser());
+    _sessionService = ref.read(userSessionServiceProvider);
 
     return const AuthState();
   }
@@ -152,7 +154,15 @@ class AuthViewModel extends Notifier<AuthState> {
   }
 
   Future<void> restoreSession() async {
-    // Try to restore user session from stored data
+    final hasSession = await _sessionService.hasSession();
+    if (!hasSession) {
+      state = state.copyWith(
+        status: AuthStatus.unauthenticated,
+        errorMessage: null,
+      );
+      return;
+    }
+
     await getCurrentUser();
   }
 }

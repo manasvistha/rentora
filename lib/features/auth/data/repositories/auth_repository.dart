@@ -141,6 +141,11 @@ class AuthRepository implements IAuthRepository {
 
   @override
   Future<Either<Failure, AuthEntity?>> getCurrentUser() async {
+    final hasSession = await _sessionService.hasSession();
+    if (!hasSession) {
+      return const Right(null);
+    }
+
     if (await _networkInfo.isConnected) {
       try {
         final apiModel = await _authRemoteDataSource.getCurrentUser();
@@ -168,7 +173,7 @@ class AuthRepository implements IAuthRepository {
         if (model != null) {
           return Right(model.toEntity());
         }
-        return const Left(LocalDatabaseFailure(message: "No active session"));
+        return const Right(null);
       } catch (e) {
         return Left(LocalDatabaseFailure(message: e.toString()));
       }

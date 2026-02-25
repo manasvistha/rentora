@@ -18,20 +18,21 @@ class NetworkInfo implements INetworkInfo {
 
   @override
   Future<bool> get isConnected async {
-    final result = await _connectivity
-        .checkConnectivity(); // is the internet or data is on or not
+    final result = await _connectivity.checkConnectivity();
     if (result.contains(ConnectivityResult.none)) {
       return false;
     }
 
-    return true;
+    return _hasInternetAccess();
   }
 
-  Future<bool> _sacchaikaiInternetChakiNai() async {
+  Future<bool> _hasInternetAccess() async {
     try {
-      final result = await InternetAddress.lookup('google.come');
+      final result = await InternetAddress.lookup(
+        'example.com',
+      ).timeout(const Duration(seconds: 2));
       return result.isNotEmpty && result[0].rawAddress.isNotEmpty;
-    } catch (e) {
+    } catch (_) {
       return false;
     }
   }
