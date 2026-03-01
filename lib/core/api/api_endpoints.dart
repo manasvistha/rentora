@@ -80,4 +80,9 @@ class ApiEndpoints {
       'booking/$id/status'; // PUT -> /api/booking/:id/status
   static String bookingCancel(String id) =>
       'booking/$id/cancel'; // PATCH -> /api/booking/:id/cancel
+
+  // ============ Favorite Endpoints ============
+  static const String favorites = 'favorite'; // GET -> /api/favorite
+  static String favoriteByProperty(String propertyId) =>
+      'favorite/$propertyId'; // POST/DELETE -> /api/favorite/:propertyId
 }

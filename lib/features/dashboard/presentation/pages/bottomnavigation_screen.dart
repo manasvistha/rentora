@@ -1,25 +1,33 @@
 import 'package:flutter/material.dart';
 import 'package:rentora/features/dashboard/presentation/pages/profile_screen.dart';
-import 'home_screen.dart';
+import 'explore_screen.dart';
 import 'search_screen.dart';
 import 'message_screen.dart';
-import 'settings_screen.dart';
+import 'myfavorite_screen.dart';
 
 class BottomnavigationScreen extends StatefulWidget {
-  const BottomnavigationScreen({super.key});
+  const BottomnavigationScreen({super.key, this.initialIndex = 0});
+
+  final int initialIndex;
 
   @override
   State<BottomnavigationScreen> createState() => _BottomnavigationScreenState();
 }
 
 class _BottomnavigationScreenState extends State<BottomnavigationScreen> {
-  int _selectedIndex = 0;
+  late int _selectedIndex;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedIndex = widget.initialIndex.clamp(0, _screens.length - 1);
+  }
 
   final List<Widget> _screens = const [
     HomeScreen(),
     SearchScreen(),
     MessageScreen(),
-    SettingsScreen(),
+    MyFavoriteScreen(),
     ProfileScreen(),
   ];
 
@@ -30,7 +38,13 @@ class _BottomnavigationScreenState extends State<BottomnavigationScreen> {
         backgroundColor: const Color(0xFF2F9E9A),
         elevation: 0,
         title: Text(
-          ["Home", "Search", "Message", "Settings", "Profile"][_selectedIndex],
+          [
+            "Explore",
+            "Search",
+            "Message",
+            "My Favorite",
+            "Profile",
+          ][_selectedIndex],
           style: const TextStyle(color: Colors.white),
         ),
         centerTitle: true,
@@ -58,12 +72,15 @@ class _BottomnavigationScreenState extends State<BottomnavigationScreen> {
           });
         },
         items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.explore_outlined),
+            label: 'Explore',
+          ),
           BottomNavigationBarItem(icon: Icon(Icons.search), label: 'Search'),
           BottomNavigationBarItem(icon: Icon(Icons.message), label: 'Message'),
           BottomNavigationBarItem(
-            icon: Icon(Icons.settings),
-            label: 'Settings',
+            icon: Icon(Icons.favorite_border),
+            label: 'My Favorite',
           ),
           BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
         ],

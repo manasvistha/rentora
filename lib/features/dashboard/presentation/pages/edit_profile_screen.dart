@@ -28,6 +28,56 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   bool _isChangingPassword = false;
   File? _selectedImage;
 
+  String? _resolveProfilePictureUrl(String? rawPath) {
+    if (rawPath == null) return null;
+
+    final trimmed = rawPath.trim();
+    if (trimmed.isEmpty) return null;
+
+    if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+      return trimmed;
+    }
+
+    final host = ApiEndpoints.baseUrl.replaceFirst(RegExp(r'/api/?$'), '');
+
+    if (trimmed.startsWith('/public/')) {
+      return '$host$trimmed';
+    }
+
+    if (trimmed.startsWith('/')) {
+      return '$host$trimmed';
+    }
+
+    return '$host/public/profile-pictures/$trimmed';
+  }
+
+  InputDecoration _fieldDecoration({
+    required String label,
+    required IconData icon,
+    Widget? suffixIcon,
+  }) {
+    return InputDecoration(
+      labelText: label,
+      prefixIcon: Icon(icon, color: const Color(0xFF4AA6A6)),
+      suffixIcon: suffixIcon,
+      filled: true,
+      fillColor: const Color(0xFFF7FBFB),
+      contentPadding: const EdgeInsets.symmetric(vertical: 14, horizontal: 14),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: BorderSide.none,
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: const BorderSide(color: Color(0xFFE1ECEC)),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: const BorderSide(color: Color(0xFF4AA6A6), width: 1.6),
+      ),
+    );
+  }
+
   @override
   void initState() {
     super.initState();
@@ -130,27 +180,30 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     final authState = ref.watch(authViewModelProvider);
     final isLoading = authState.status == AuthStatus.loading;
     final user = authState.user;
-    final profilePictureUrl = user?.profilePicture != null
-        ? '${ApiEndpoints.baseUrl.replaceAll('/api/', '')}${user!.profilePicture}'
-        : null;
+    final profilePictureUrl = _resolveProfilePictureUrl(user?.profilePicture);
 
     return Scaffold(
       backgroundColor: const Color(0xFFF2F7F7),
       appBar: AppBar(
         backgroundColor: const Color(0xFF4AA6A6),
         elevation: 0,
+        toolbarHeight: 70,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () => Navigator.pop(context),
         ),
         title: const Text(
           'Edit Profile',
-          style: TextStyle(color: Colors.white),
+          style: TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.w700,
+            fontSize: 20,
+          ),
         ),
         centerTitle: true,
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+        padding: const EdgeInsets.fromLTRB(20, 20, 20, 24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -158,10 +211,11 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: const Color(0xFFE4EEEE)),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
+                    color: Colors.black.withValues(alpha: 0.04),
                     blurRadius: 16,
                     offset: const Offset(0, 6),
                   ),
@@ -172,31 +226,49 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    const SizedBox(height: 4),
+                    const Text(
+                      'Personal Information',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF4AA6A6),
+                      ),
+                    ),
+                    const SizedBox(height: 14),
                     // Avatar
                     Center(
                       child: Column(
                         children: [
                           Stack(
                             children: [
-                              CircleAvatar(
-                                radius: 56,
-                                backgroundColor: Colors.grey[100],
-                                backgroundImage: _selectedImage != null
-                                    ? FileImage(_selectedImage!)
-                                          as ImageProvider
-                                    : (profilePictureUrl != null
-                                          ? NetworkImage(profilePictureUrl)
-                                          : null),
-                                child:
-                                    (_selectedImage == null &&
-                                        profilePictureUrl == null)
-                                    ? const Icon(
-                                        Icons.person,
-                                        size: 56,
-                                        color: Color(0xFF4AA6A6),
-                                      )
-                                    : null,
+                              Container(
+                                padding: const EdgeInsets.all(4),
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  border: Border.all(
+                                    color: const Color(0xFF4AA6A6),
+                                    width: 1.8,
+                                  ),
+                                ),
+                                child: CircleAvatar(
+                                  radius: 56,
+                                  backgroundColor: Colors.grey[100],
+                                  backgroundImage: _selectedImage != null
+                                      ? FileImage(_selectedImage!)
+                                            as ImageProvider
+                                      : (profilePictureUrl != null
+                                            ? NetworkImage(profilePictureUrl)
+                                            : null),
+                                  child:
+                                      (_selectedImage == null &&
+                                          profilePictureUrl == null)
+                                      ? const Icon(
+                                          Icons.person,
+                                          size: 56,
+                                          color: Color(0xFF4AA6A6),
+                                        )
+                                      : null,
+                                ),
                               ),
                               Positioned(
                                 bottom: 0,
@@ -236,32 +308,24 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                             user?.email ?? '',
                             style: TextStyle(color: Colors.grey[600]),
                           ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Tap icon to update your profile image',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey[600],
+                            ),
+                          ),
                         ],
                       ),
                     ),
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 22),
                     TextFormField(
                       controller: _nameController,
                       enabled: !isLoading,
-                      decoration: InputDecoration(
-                        labelText: 'Full Name',
-                        prefixIcon: const Icon(
-                          Icons.person_outline,
-                          color: Color(0xFF4AA6A6),
-                        ),
-                        filled: true,
-                        fillColor: Colors.white,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide.none,
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(
-                            color: Color(0xFF4AA6A6),
-                            width: 2,
-                          ),
-                        ),
+                      decoration: _fieldDecoration(
+                        label: 'Full Name',
+                        icon: Icons.person_outline,
                       ),
                       validator: (value) => (value == null || value.isEmpty)
                           ? 'Please enter your name'
@@ -272,25 +336,9 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                       controller: _emailController,
                       enabled: !isLoading,
                       keyboardType: TextInputType.emailAddress,
-                      decoration: InputDecoration(
-                        labelText: 'Email',
-                        prefixIcon: const Icon(
-                          Icons.email_outlined,
-                          color: Color(0xFF4AA6A6),
-                        ),
-                        filled: true,
-                        fillColor: Colors.white,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide.none,
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(
-                            color: Color(0xFF4AA6A6),
-                            width: 2,
-                          ),
-                        ),
+                      decoration: _fieldDecoration(
+                        label: 'Email',
+                        icon: Icons.email_outlined,
                       ),
                       validator: (value) {
                         if (value == null || value.isEmpty)
@@ -301,6 +349,14 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                       },
                     ),
                     const SizedBox(height: 24),
+                    const Text(
+                      'Security',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF4AA6A6),
+                      ),
+                    ),
                     CheckboxListTile(
                       title: const Text(
                         'Change Password',
@@ -330,12 +386,9 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                         controller: _passwordController,
                         enabled: !isLoading,
                         obscureText: !_showPassword,
-                        decoration: InputDecoration(
-                          labelText: 'New Password',
-                          prefixIcon: const Icon(
-                            Icons.lock_outline,
-                            color: Color(0xFF4AA6A6),
-                          ),
+                        decoration: _fieldDecoration(
+                          label: 'New Password',
+                          icon: Icons.lock_outline,
                           suffixIcon: IconButton(
                             icon: Icon(
                               _showPassword
@@ -345,19 +398,6 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                             ),
                             onPressed: () =>
                                 setState(() => _showPassword = !_showPassword),
-                          ),
-                          filled: true,
-                          fillColor: Colors.white,
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide.none,
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: const BorderSide(
-                              color: Color(0xFF4AA6A6),
-                              width: 2,
-                            ),
                           ),
                         ),
                         validator: _isChangingPassword
@@ -375,12 +415,9 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                         controller: _confirmPasswordController,
                         enabled: !isLoading,
                         obscureText: !_showConfirmPassword,
-                        decoration: InputDecoration(
-                          labelText: 'Confirm New Password',
-                          prefixIcon: const Icon(
-                            Icons.lock_outline,
-                            color: Color(0xFF4AA6A6),
-                          ),
+                        decoration: _fieldDecoration(
+                          label: 'Confirm New Password',
+                          icon: Icons.lock_outline,
                           suffixIcon: IconButton(
                             icon: Icon(
                               _showConfirmPassword
@@ -391,19 +428,6 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                             onPressed: () => setState(
                               () =>
                                   _showConfirmPassword = !_showConfirmPassword,
-                            ),
-                          ),
-                          filled: true,
-                          fillColor: Colors.white,
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide.none,
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: const BorderSide(
-                              color: Color(0xFF4AA6A6),
-                              width: 2,
                             ),
                           ),
                         ),
@@ -426,7 +450,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                           backgroundColor: const Color(0xFF4AA6A6),
                           foregroundColor: Colors.white,
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(14),
                           ),
                           elevation: 2,
                         ),
