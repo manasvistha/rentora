@@ -189,7 +189,19 @@ class _FavoriteItem {
 
   static String _toAbsoluteImageUrl(String raw) {
     if (raw.isEmpty) return '';
-    if (raw.startsWith('http://') || raw.startsWith('https://')) return raw;
+
+    // If backend returned an absolute URL pointing to localhost, remap it to the
+    // API host so the Android emulator/device can reach it.
+    if (raw.startsWith('http://') || raw.startsWith('https://')) {
+      final uri = Uri.tryParse(raw);
+      if (uri == null) return raw;
+
+      const localHosts = {'localhost', '127.0.0.1', '0.0.0.0'};
+      if (!localHosts.contains(uri.host)) return raw;
+
+      final apiUri = Uri.parse(ApiEndpoints.baseUrl);
+      return uri.replace(host: apiUri.host, port: apiUri.port).toString();
+    }
 
     final apiUri = Uri.parse(ApiEndpoints.baseUrl);
     final basePath = apiUri.path.endsWith('/api/') ? '/api/' : apiUri.path;

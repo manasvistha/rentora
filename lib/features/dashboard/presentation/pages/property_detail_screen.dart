@@ -1,0 +1,676 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:rentora/core/api/api_client.dart';
+import 'package:rentora/core/api/api_endpoints.dart';
+import 'package:rentora/features/dashboard/domain/entities/dashboard_property_entity.dart';
+
+class PropertyDetailScreen extends ConsumerStatefulWidget {
+  final DashboardPropertyEntity property;
+
+  const PropertyDetailScreen({super.key, required this.property});
+
+  @override
+  ConsumerState<PropertyDetailScreen> createState() =>
+      _PropertyDetailScreenState();
+}
+
+class _PropertyDetailScreenState extends ConsumerState<PropertyDetailScreen> {
+  bool _loading = true;
+  String? _error;
+  Map<String, dynamic>? _details;
+  PageController? _imagePageController;
+  int _currentImageIndex = 0;
+
+  PageController get _pageController {
+    _imagePageController ??= PageController(initialPage: _currentImageIndex);
+    return _imagePageController!;
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _loadDetails();
+  }
+
+  @override
+  void dispose() {
+    _imagePageController?.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadDetails() async {
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+
+    try {
+      final client = ref.read(apiClientProvider);
+      final response = await client.get(
+        ApiEndpoints.propertyById(widget.property.id),
+      );
+
+      final extracted = _extractMap(response.data);
+
+      if (!mounted) return;
+      setState(() {
+        _details = extracted;
+        _loading = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _error = 'Failed to fetch full property details.';
+        _loading = false;
+      });
+    }
+  }
+
+  Map<String, dynamic>? _extractMap(dynamic raw) {
+    if (raw is Map<String, dynamic>) {
+      final data = raw['data'];
+      if (data is Map<String, dynamic>) return data;
+      return raw;
+    }
+    if (raw is Map) {
+      final mapped = raw.cast<String, dynamic>();
+      final data = mapped['data'];
+      if (data is Map) return data.cast<String, dynamic>();
+      return mapped;
+    }
+    return null;
+  }
+
+  String _toAbsoluteImageUrl(String raw) {
+    if (raw.isEmpty) return '';
+
+    if (raw.startsWith('http://') || raw.startsWith('https://')) {
+      final uri = Uri.tryParse(raw);
+      if (uri == null) return raw;
+
+      const localHosts = {'localhost', '127.0.0.1', '0.0.0.0'};
+      if (!localHosts.contains(uri.host)) return raw;
+
+      final apiUri = Uri.parse(ApiEndpoints.baseUrl);
+      return uri.replace(host: apiUri.host, port: apiUri.port).toString();
+    }
+
+    final apiUri = Uri.parse(ApiEndpoints.baseUrl);
+    final basePath = apiUri.path.endsWith('/api/') ? '/api/' : apiUri.path;
+    final hostPath = basePath.endsWith('/api/')
+        ? basePath.substring(0, basePath.length - 5)
+        : basePath;
+    final sanitized = raw.startsWith('/') ? raw : '/$raw';
+
+    return Uri(
+      scheme: apiUri.scheme,
+      host: apiUri.host,
+      port: apiUri.hasPort ? apiUri.port : null,
+      path: '$hostPath$sanitized',
+    ).toString();
+  }
+
+  List<String> _resolveImages(Map<String, dynamic>? map) {
+    final images = <String>[];
+
+    void addIfValid(dynamic value) {
+      if (value == null) return;
+      final text = value.toString().trim();
+      if (text.isEmpty) return;
+      final normalized = _toAbsoluteImageUrl(text);
+      if (normalized.isNotEmpty) images.add(normalized);
+    }
+
+    if (map != null) {
+      final rawImages = map['images'];
+      if (rawImages is List) {
+        for (final image in rawImages) {
+          if (image is Map) {
+            addIfValid(image['url'] ?? image['path'] ?? image['src']);
+          } else {
+            addIfValid(image);
+          }
+        }
+      }
+
+      for (final key in ['image', 'thumbnail', 'cover', 'photo', 'imageUrl']) {
+        addIfValid(map[key]);
+      }
+    }
+
+    if (images.isEmpty && widget.property.imageUrl.isNotEmpty) {
+      images.add(widget.property.imageUrl);
+    }
+
+    final seen = <String>{};
+    return images.where((image) => seen.add(image)).toList();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final property = _details ?? <String, dynamic>{};
+    final title = (property['title'] ?? widget.property.title).toString();
+    final location = (property['location'] ?? widget.property.location)
+        .toString();
+    final status = (property['status'] ?? widget.property.status)
+        .toString()
+        .toLowerCase();
+    final priceValue = property['price'];
+    final price = priceValue is num
+        ? priceValue.toDouble()
+        : double.tryParse(priceValue?.toString() ?? '') ??
+              widget.property.price;
+    final description = (property['description'] ?? '').toString();
+    final propertyType =
+        (property['propertyType'] ??
+                property['property_type'] ??
+                property['type'] ??
+                '')
+            .toString();
+    final floorNumber = (property['floor'] ?? property['floorNumber'] ?? '')
+        .toString();
+    final petPolicy =
+        (property['petPolicy'] ??
+                property['petsPolicy'] ??
+                property['pet_policy'] ??
+                '')
+            .toString();
+    final bedrooms = property['bedrooms']?.toString();
+    final bathrooms = property['bathrooms']?.toString();
+    final area = property['area']?.toString();
+    final furnished = property['furnished'];
+    final amenitiesRaw = property['amenities'];
+    final amenities = amenitiesRaw is List
+        ? amenitiesRaw.map((item) => item.toString()).toList()
+        : <String>[];
+
+    final imageUrls = _resolveImages(_details);
+    final isAvailable = status == 'available' || status == 'approved';
+
+    return Scaffold(
+      appBar: AppBar(
+        backgroundColor: const Color(0xFF2F9E9A),
+        elevation: 0,
+        automaticallyImplyLeading: false,
+        leading: IconButton(
+          onPressed: () => Navigator.of(context).maybePop(),
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+        ),
+        title: const SizedBox.shrink(),
+      ),
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [Color(0xFF2F9E9A), Color(0xFF6CCBC7), Color(0xFFD8F3F2)],
+          ),
+        ),
+        child: SafeArea(
+          top: false,
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              return SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (_loading)
+                        const Padding(
+                          padding: EdgeInsets.only(top: 50),
+                          child: Center(
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                            ),
+                          ),
+                        )
+                      else if (_error != null)
+                        _DetailCard(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                _error!,
+                                style: const TextStyle(
+                                  color: Color(0xFF7A2424),
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              TextButton(
+                                onPressed: _loadDetails,
+                                child: const Text('Retry'),
+                              ),
+                            ],
+                          ),
+                        )
+                      else ...[
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(18),
+                          child: AspectRatio(
+                            aspectRatio: 16 / 10,
+                            child: imageUrls.isEmpty
+                                ? Container(
+                                    color: const Color(0xFFE8EFED),
+                                    child: const Icon(
+                                      Icons.home_work_outlined,
+                                      color: Color(0xFF7A9390),
+                                      size: 44,
+                                    ),
+                                  )
+                                : Stack(
+                                    children: [
+                                      PageView.builder(
+                                        controller: _pageController,
+                                        itemCount: imageUrls.length,
+                                        onPageChanged: (index) {
+                                          if (!mounted) return;
+                                          setState(() {
+                                            _currentImageIndex = index;
+                                          });
+                                        },
+                                        itemBuilder: (context, index) {
+                                          return Image.network(
+                                            imageUrls[index],
+                                            fit: BoxFit.cover,
+                                            errorBuilder:
+                                                (
+                                                  context,
+                                                  error,
+                                                  stackTrace,
+                                                ) => Container(
+                                                  color: const Color(
+                                                    0xFFE8EFED,
+                                                  ),
+                                                  child: const Icon(
+                                                    Icons.broken_image_outlined,
+                                                    color: Color(0xFF7A9390),
+                                                    size: 44,
+                                                  ),
+                                                ),
+                                          );
+                                        },
+                                      ),
+                                      if (imageUrls.length > 1)
+                                        Positioned(
+                                          left: 0,
+                                          right: 0,
+                                          bottom: 10,
+                                          child: Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.center,
+                                            children: List.generate(
+                                              imageUrls.length,
+                                              (index) => AnimatedContainer(
+                                                duration: const Duration(
+                                                  milliseconds: 200,
+                                                ),
+                                                margin:
+                                                    const EdgeInsets.symmetric(
+                                                      horizontal: 3,
+                                                    ),
+                                                width:
+                                                    _currentImageIndex == index
+                                                    ? 14
+                                                    : 8,
+                                                height: 8,
+                                                decoration: BoxDecoration(
+                                                  color:
+                                                      _currentImageIndex ==
+                                                          index
+                                                      ? Colors.white
+                                                      : Colors.white.withValues(
+                                                          alpha: 0.55,
+                                                        ),
+                                                  borderRadius:
+                                                      BorderRadius.circular(99),
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      if (imageUrls.length > 1)
+                                        Positioned(
+                                          top: 10,
+                                          right: 10,
+                                          child: Container(
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 8,
+                                              vertical: 4,
+                                            ),
+                                            decoration: BoxDecoration(
+                                              color: Colors.black.withValues(
+                                                alpha: 0.45,
+                                              ),
+                                              borderRadius:
+                                                  BorderRadius.circular(10),
+                                            ),
+                                            child: Text(
+                                              '${_currentImageIndex + 1}/${imageUrls.length}',
+                                              style: const TextStyle(
+                                                color: Colors.white,
+                                                fontSize: 11,
+                                                fontWeight: FontWeight.w700,
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                    ],
+                                  ),
+                          ),
+                        ),
+                        if (imageUrls.length > 1) ...[
+                          const SizedBox(height: 10),
+                          SizedBox(
+                            height: 64,
+                            child: ListView.separated(
+                              scrollDirection: Axis.horizontal,
+                              itemCount: imageUrls.length,
+                              separatorBuilder: (context, index) =>
+                                  const SizedBox(width: 8),
+                              itemBuilder: (context, index) {
+                                final isSelected = _currentImageIndex == index;
+                                return GestureDetector(
+                                  onTap: () {
+                                    _pageController.animateToPage(
+                                      index,
+                                      duration: const Duration(
+                                        milliseconds: 250,
+                                      ),
+                                      curve: Curves.easeOut,
+                                    );
+                                    if (!mounted) return;
+                                    setState(() {
+                                      _currentImageIndex = index;
+                                    });
+                                  },
+                                  child: AnimatedContainer(
+                                    duration: const Duration(milliseconds: 180),
+                                    width: 78,
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(10),
+                                      border: Border.all(
+                                        color: isSelected
+                                            ? const Color(0xFF0F766E)
+                                            : const Color(0xFFDFECE9),
+                                        width: isSelected ? 2 : 1,
+                                      ),
+                                    ),
+                                    child: ClipRRect(
+                                      borderRadius: BorderRadius.circular(9),
+                                      child: Image.network(
+                                        imageUrls[index],
+                                        fit: BoxFit.cover,
+                                        errorBuilder:
+                                            (context, error, stackTrace) =>
+                                                Container(
+                                                  color: const Color(
+                                                    0xFFE8EFED,
+                                                  ),
+                                                  child: const Icon(
+                                                    Icons.broken_image_outlined,
+                                                    color: Color(0xFF7A9390),
+                                                    size: 18,
+                                                  ),
+                                                ),
+                                      ),
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                        ],
+                        const SizedBox(height: 14),
+                        _DetailCard(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                title,
+                                style: const TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.w800,
+                                  color: Color(0xFF103033),
+                                ),
+                              ),
+                              const SizedBox(height: 10),
+                              Row(
+                                children: [
+                                  const Icon(
+                                    Icons.place_outlined,
+                                    size: 18,
+                                    color: Color(0xFF5E7A7E),
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Expanded(
+                                    child: Text(
+                                      location,
+                                      style: const TextStyle(
+                                        fontSize: 14,
+                                        color: Color(0xFF5E7A7E),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 14),
+                              Text(
+                                'Rs. ${price.toStringAsFixed(0)} / month',
+                                style: const TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w800,
+                                  color: Color(0xFF0F766E),
+                                ),
+                              ),
+                              const SizedBox(height: 14),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 6,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: isAvailable
+                                      ? const Color(0xFFE5F7EE)
+                                      : const Color(0xFFF8E8E8),
+                                  borderRadius: BorderRadius.circular(999),
+                                ),
+                                child: Text(
+                                  isAvailable ? 'Available' : status,
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w700,
+                                    color: isAvailable
+                                        ? const Color(0xFF0F7A43)
+                                        : const Color(0xFF9B2C2C),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+                              if (description.trim().isNotEmpty) ...[
+                                const Text(
+                                  'Description',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w700,
+                                    color: Color(0xFF103033),
+                                  ),
+                                ),
+                                const SizedBox(height: 6),
+                                Text(
+                                  description,
+                                  style: const TextStyle(
+                                    fontSize: 13,
+                                    color: Color(0xFF5E7A7E),
+                                  ),
+                                ),
+                                const SizedBox(height: 12),
+                              ],
+                              _DetailField(
+                                label: 'Property Type',
+                                value: propertyType.isEmpty
+                                    ? 'Not specified'
+                                    : propertyType,
+                              ),
+                              const SizedBox(height: 8),
+                              _DetailField(
+                                label: 'Floor Number',
+                                value: floorNumber.isEmpty
+                                    ? 'Not specified'
+                                    : floorNumber,
+                              ),
+                              const SizedBox(height: 8),
+                              _DetailField(
+                                label: 'Pet Policy',
+                                value: petPolicy.isEmpty
+                                    ? 'Not specified'
+                                    : petPolicy,
+                              ),
+                              const SizedBox(height: 12),
+                              Wrap(
+                                spacing: 8,
+                                runSpacing: 8,
+                                children: [
+                                  if (bedrooms != null)
+                                    _SpecChip('Bedrooms: $bedrooms'),
+                                  if (bathrooms != null)
+                                    _SpecChip('Bathrooms: $bathrooms'),
+                                  if (area != null)
+                                    _SpecChip('Area: $area sqft'),
+                                  if (furnished is bool)
+                                    _SpecChip(
+                                      furnished
+                                          ? 'Furnished: Yes'
+                                          : 'Furnished: No',
+                                    ),
+                                ],
+                              ),
+                              if (amenities.isNotEmpty) ...[
+                                const SizedBox(height: 12),
+                                const Text(
+                                  'Amenities',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w700,
+                                    color: Color(0xFF103033),
+                                  ),
+                                ),
+                                const SizedBox(height: 6),
+                                Wrap(
+                                  spacing: 8,
+                                  runSpacing: 8,
+                                  children: amenities
+                                      .map((amenity) => _SpecChip(amenity))
+                                      .toList(),
+                                ),
+                              ],
+                              const SizedBox(height: 14),
+                              Text(
+                                'Property ID: ${widget.property.id}',
+                                style: const TextStyle(
+                                  fontSize: 13,
+                                  color: Color(0xFF5E7A7E),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _DetailCard extends StatelessWidget {
+  final Widget child;
+
+  const _DetailCard({required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 12,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: child,
+    );
+  }
+}
+
+class _SpecChip extends StatelessWidget {
+  final String label;
+
+  const _SpecChip(this.label);
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: const Color(0xFFEAF7F4),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Text(
+        label,
+        style: const TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
+          color: Color(0xFF0F766E),
+        ),
+      ),
+    );
+  }
+}
+
+class _DetailField extends StatelessWidget {
+  final String label;
+  final String value;
+
+  const _DetailField({required this.label, required this.value});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SizedBox(
+          width: 120,
+          child: Text(
+            label,
+            style: const TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+              color: Color(0xFF103033),
+            ),
+          ),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            value,
+            style: const TextStyle(fontSize: 13, color: Color(0xFF5E7A7E)),
+          ),
+        ),
+      ],
+    );
+  }
+}

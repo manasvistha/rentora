@@ -4,7 +4,10 @@ import 'package:intl/intl.dart';
 import 'package:rentora/core/api/api_client.dart';
 import 'package:rentora/core/api/api_endpoints.dart';
 import 'package:rentora/features/auth/presentation/view_model/auth_view_model.dart';
-import 'package:rentora/features/dashboard/presentation/pages/search_screen.dart';
+import 'package:rentora/features/dashboard/domain/entities/dashboard_booking_entity.dart';
+import 'package:rentora/features/dashboard/domain/entities/dashboard_property_entity.dart';
+import 'package:rentora/features/dashboard/domain/usecases/get_dashboard_snapshot_usecase.dart';
+import 'package:rentora/features/dashboard/presentation/pages/dashboard_lists_screen.dart';
 
 class HomeContent extends ConsumerStatefulWidget {
   const HomeContent({super.key});
@@ -40,35 +43,29 @@ class _HomeContentState extends ConsumerState<HomeContent> {
       _error = null;
     });
 
-    final client = ref.read(apiClientProvider);
+    final useCase = ref.read(getDashboardSnapshotUseCaseProvider);
+    final result = await useCase.execute(forceRefresh: true);
 
-    try {
-      final responses = await Future.wait([
-        client.get(ApiEndpoints.propertyList),
-        client.get(ApiEndpoints.propertyMy),
-        client.get(ApiEndpoints.bookingMy),
-      ]);
-
-      final propertyRaw = responses[0].data;
-      final myPropertyRaw = responses[1].data;
-      final bookingRaw = responses[2].data;
-
-      final propertyList = _extractList(propertyRaw);
-      final myPropertyList = _extractList(myPropertyRaw);
-      final bookingList = _extractList(bookingRaw);
-
-      setState(() {
-        _properties = propertyList.map(_PropertyItem.fromJson).toList();
-        _myProperties = myPropertyList.map(_PropertyItem.fromJson).toList();
-        _bookings = bookingList.map(_BookingItem.fromJson).toList();
-        _loading = false;
-      });
-    } catch (e) {
-      setState(() {
-        _loading = false;
-        _error = 'Failed to load home data. Pull down to retry.';
-      });
-    }
+    result.fold(
+      (_) {
+        setState(() {
+          _loading = false;
+          _error = 'Failed to load home data. Pull down to retry.';
+        });
+      },
+      (snapshot) {
+        setState(() {
+          _properties = snapshot.allProperties
+              .map(_PropertyItem.fromEntity)
+              .toList();
+          _myProperties = snapshot.myProperties
+              .map(_PropertyItem.fromEntity)
+              .toList();
+          _bookings = snapshot.myBookings.map(_BookingItem.fromEntity).toList();
+          _loading = false;
+        });
+      },
+    );
   }
 
   List<dynamic> _extractList(dynamic value) {
@@ -149,6 +146,28 @@ class _HomeContentState extends ConsumerState<HomeContent> {
         child: ListView(
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 28),
           children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Image.asset(
+                  'assets/images/Logo.png',
+                  height: 30,
+                  fit: BoxFit.contain,
+                ),
+                IconButton(
+                  onPressed: () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('No notifications yet.')),
+                    );
+                  },
+                  icon: const Icon(
+                    Icons.notifications_none_rounded,
+                    color: Colors.white,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
             _DashboardHeader(
               greeting: greeting,
               userName: userName,
@@ -171,7 +190,9 @@ class _HomeContentState extends ConsumerState<HomeContent> {
                   TextButton.icon(
                     onPressed: () {
                       Navigator.of(context).push(
-                        MaterialPageRoute(builder: (_) => const SearchScreen()),
+                        MaterialPageRoute(
+                          builder: (_) => const AllPropertiesScreen(),
+                        ),
                       );
                     },
                     icon: const Icon(Icons.arrow_forward, size: 16),
@@ -522,6 +543,17 @@ class _PropertyItem {
     );
   }
 
+  factory _PropertyItem.fromEntity(DashboardPropertyEntity entity) {
+    return _PropertyItem(
+      id: entity.id,
+      title: entity.title,
+      location: entity.location,
+      price: entity.price,
+      status: entity.status,
+      images: entity.images,
+    );
+  }
+
   static List<String> _extractImages(Map<String, dynamic> map) {
     final images = <String>[];
 
@@ -624,6 +656,15 @@ class _BookingItem {
       propertyTitle: title,
       status: (map['status'] ?? 'pending').toString(),
       createdAt: DateTime.tryParse((map['createdAt'] ?? '').toString()),
+    );
+  }
+
+  factory _BookingItem.fromEntity(DashboardBookingEntity entity) {
+    return _BookingItem(
+      id: entity.id,
+      propertyTitle: entity.propertyTitle,
+      status: entity.status,
+      createdAt: entity.createdAt,
     );
   }
 }

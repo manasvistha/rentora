@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:rentora/features/dashboard/presentation/pages/dashboard_lists_screen.dart';
 
 class SearchScreen extends StatelessWidget {
   const SearchScreen({super.key});
@@ -28,12 +29,36 @@ class SearchScreen extends StatelessWidget {
                     _PrimaryAction(
                       label: 'My Listing',
                       icon: Icons.add,
-                      onPressed: () {},
+                      onPressed: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => const MyListingsScreen(),
+                          ),
+                        );
+                      },
                     ),
                     const SizedBox(width: 12),
-                    _OutlineAction(label: 'My Bookings', onPressed: () {}),
+                    _OutlineAction(
+                      label: 'My Bookings',
+                      onPressed: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => const MyBookingsScreen(),
+                          ),
+                        );
+                      },
+                    ),
                     const SizedBox(width: 12),
-                    _OutlineAction(label: 'Booking Requests', onPressed: () {}),
+                    _OutlineAction(
+                      label: 'Booking Requests',
+                      onPressed: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => const BookingRequestsScreen(),
+                          ),
+                        );
+                      },
+                    ),
                   ],
                 ),
               ),

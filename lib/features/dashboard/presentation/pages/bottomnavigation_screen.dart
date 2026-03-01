@@ -34,22 +34,6 @@ class _BottomnavigationScreenState extends State<BottomnavigationScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: const Color(0xFF2F9E9A),
-        elevation: 0,
-        title: Text(
-          [
-            "Explore",
-            "Search",
-            "Message",
-            "My Favorite",
-            "Profile",
-          ][_selectedIndex],
-          style: const TextStyle(color: Colors.white),
-        ),
-        centerTitle: true,
-      ),
-
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
