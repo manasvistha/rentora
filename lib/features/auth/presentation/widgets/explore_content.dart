@@ -8,6 +8,7 @@ import 'package:rentora/features/dashboard/domain/entities/dashboard_booking_ent
 import 'package:rentora/features/dashboard/domain/entities/dashboard_property_entity.dart';
 import 'package:rentora/features/dashboard/domain/usecases/get_dashboard_snapshot_usecase.dart';
 import 'package:rentora/features/dashboard/presentation/pages/dashboard_lists_screen.dart';
+import 'package:rentora/features/dashboard/presentation/pages/property_detail_screen.dart';
 
 class HomeContent extends ConsumerStatefulWidget {
   const HomeContent({super.key});
@@ -786,126 +787,242 @@ class _PropertyCard extends StatelessWidget {
   }
 }
 
-class _PropertyGridCard extends StatelessWidget {
+class _PropertyGridCard extends ConsumerStatefulWidget {
   final _PropertyItem item;
 
   const _PropertyGridCard({required this.item});
 
   @override
+  ConsumerState<_PropertyGridCard> createState() => _PropertyGridCardState();
+}
+
+class _PropertyGridCardState extends ConsumerState<_PropertyGridCard> {
+  bool _isFavorite = false;
+  bool _favLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkFavorite();
+  }
+
+  Future<void> _checkFavorite() async {
+    if (widget.item.id.isEmpty) return;
+    try {
+      final client = ref.read(apiClientProvider);
+      final res = await client.get(
+        ApiEndpoints.favoriteByProperty(widget.item.id),
+      );
+      final data = res.data;
+      final fav = data is Map ? (data['isFavorite'] == true) : false;
+      if (mounted) setState(() => _isFavorite = fav);
+    } catch (_) {}
+  }
+
+  Future<void> _toggleFavorite() async {
+    if (_favLoading || widget.item.id.isEmpty) return;
+    setState(() => _favLoading = true);
+    try {
+      final client = ref.read(apiClientProvider);
+      if (_isFavorite) {
+        await client.delete(ApiEndpoints.favoriteByProperty(widget.item.id));
+      } else {
+        await client.post(ApiEndpoints.favoriteByProperty(widget.item.id));
+      }
+      if (mounted) setState(() => _isFavorite = !_isFavorite);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to update favorite: $e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _favLoading = false);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final item = widget.item;
     final isAvailable =
         item.status.toLowerCase() == 'available' ||
         item.status.toLowerCase() == 'approved';
 
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 10,
-            offset: const Offset(0, 6),
-          ),
-        ],
-        border: Border.all(color: const Color(0xFFE5ECEA)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          ClipRRect(
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(14)),
-            child: AspectRatio(
-              aspectRatio: 4 / 3,
-              child: item.imageUrl.isEmpty
-                  ? Container(
-                      color: const Color(0xFFE8EFED),
-                      child: const Icon(
-                        Icons.home_work_outlined,
-                        color: Color(0xFF7A9390),
-                        size: 28,
-                      ),
-                    )
-                  : Image.network(
-                      item.imageUrl,
-                      fit: BoxFit.cover,
-                      loadingBuilder: (context, child, progress) {
-                        if (progress == null) return child;
-                        return Container(
-                          color: const Color(0xFFE8EFED),
-                          alignment: Alignment.center,
-                          child: const SizedBox(
-                            width: 22,
-                            height: 22,
-                            child: CircularProgressIndicator(strokeWidth: 2.2),
-                          ),
-                        );
-                      },
-                      errorBuilder: (_, __, ___) => Container(
-                        color: const Color(0xFFE8EFED),
-                        child: const Icon(
-                          Icons.broken_image_outlined,
-                          color: Color(0xFF7A9390),
-                          size: 28,
-                        ),
-                      ),
-                    ),
+    return GestureDetector(
+      onTap: () {
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => PropertyDetailScreen(
+              property: DashboardPropertyEntity(
+                id: item.id,
+                title: item.title,
+                location: item.location,
+                price: item.price,
+                status: item.status,
+                images: item.images,
+              ),
             ),
           ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+        );
+      },
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(14),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.04),
+              blurRadius: 10,
+              offset: const Offset(0, 6),
+            ),
+          ],
+          border: Border.all(color: const Color(0xFFE5ECEA)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Stack(
               children: [
-                Text(
-                  item.title,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w700,
+                ClipRRect(
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(14),
+                  ),
+                  child: AspectRatio(
+                    aspectRatio: 4 / 3,
+                    child: item.imageUrl.isEmpty
+                        ? Container(
+                            color: const Color(0xFFE8EFED),
+                            child: const Icon(
+                              Icons.home_work_outlined,
+                              color: Color(0xFF7A9390),
+                              size: 28,
+                            ),
+                          )
+                        : Image.network(
+                            item.imageUrl,
+                            fit: BoxFit.cover,
+                            loadingBuilder: (context, child, progress) {
+                              if (progress == null) return child;
+                              return Container(
+                                color: const Color(0xFFE8EFED),
+                                alignment: Alignment.center,
+                                child: const SizedBox(
+                                  width: 22,
+                                  height: 22,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2.2,
+                                  ),
+                                ),
+                              );
+                            },
+                            errorBuilder: (_, __, ___) => Container(
+                              color: const Color(0xFFE8EFED),
+                              child: const Icon(
+                                Icons.broken_image_outlined,
+                                color: Color(0xFF7A9390),
+                                size: 28,
+                              ),
+                            ),
+                          ),
                   ),
                 ),
-                const SizedBox(height: 4),
-                Row(
-                  children: [
-                    const Icon(
-                      Icons.place_outlined,
-                      size: 14,
-                      color: Color(0xFF5E7A7E),
-                    ),
-                    const SizedBox(width: 4),
-                    Expanded(
-                      child: Text(
-                        item.location,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: Color(0xFF5E7A7E),
-                        ),
+                // Favorite heart button
+                Positioned(
+                  top: 6,
+                  right: 6,
+                  child: GestureDetector(
+                    onTap: _toggleFavorite,
+                    child: Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.9),
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.1),
+                            blurRadius: 4,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
                       ),
+                      child: _favLoading
+                          ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Color(0xFFE53935),
+                              ),
+                            )
+                          : Icon(
+                              _isFavorite
+                                  ? Icons.favorite
+                                  : Icons.favorite_border,
+                              size: 18,
+                              color: _isFavorite
+                                  ? const Color(0xFFE53935)
+                                  : const Color(0xFF8E8E8E),
+                            ),
                     ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Rs. ${item.price.toStringAsFixed(0)} / month',
-                  style: const TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w700,
-                    color: Color(0xFF0F766E),
                   ),
-                ),
-                const SizedBox(height: 8),
-                _StatusBadge(
-                  text: isAvailable ? 'Available' : item.status,
-                  positive: isAvailable,
                 ),
               ],
             ),
-          ),
-        ],
+            Padding(
+              padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    item.title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      const Icon(
+                        Icons.place_outlined,
+                        size: 14,
+                        color: Color(0xFF5E7A7E),
+                      ),
+                      const SizedBox(width: 4),
+                      Expanded(
+                        child: Text(
+                          item.location,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: Color(0xFF5E7A7E),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Rs. ${item.price.toStringAsFixed(0)} / month',
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF0F766E),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  _StatusBadge(
+                    text: isAvailable ? 'Available' : item.status,
+                    positive: isAvailable,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

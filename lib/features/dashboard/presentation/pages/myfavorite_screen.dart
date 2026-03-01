@@ -115,7 +115,7 @@ class _MyFavoriteScreenState extends ConsumerState<MyFavoriteScreen> {
                   padding: const EdgeInsets.only(bottom: 12),
                   child: _FavoriteCard(
                     item: fav,
-                    onRemove: () => _removeFavorite(fav.id),
+                    onRemove: () => _removeFavorite(fav.propertyId),
                   ),
                 ),
               ),
@@ -128,53 +128,63 @@ class _MyFavoriteScreenState extends ConsumerState<MyFavoriteScreen> {
 }
 
 class _FavoriteItem {
-  final String id;
+  /// The property's _id – used for the DELETE /api/favorite/:propertyId call.
+  final String propertyId;
   final String title;
   final String location;
   final double price;
   final List<String> images;
 
   const _FavoriteItem({
-    required this.id,
+    required this.propertyId,
     required this.title,
     required this.location,
     required this.price,
     required this.images,
   });
 
+  // Keep a compatibility getter so existing code referencing .id still works.
+  String get id => propertyId;
+
   static _FavoriteItem? fromJson(dynamic raw) {
     if (raw is! Map) return null;
     final map = raw.cast<String, dynamic>();
 
-    dynamic property = map['property'];
-    Map<String, dynamic> source;
+    final dynamic property = map['property'];
 
+    // property is populated as an object by the backend (.populate('property'))
     if (property is Map) {
-      source = property.cast<String, dynamic>();
-    } else {
-      source = map;
-      source['id'] ??= map['_id'] ?? map['property'];
+      final source = property.cast<String, dynamic>();
+      final propId = (source['_id'] ?? source['id'] ?? '').toString();
+      if (propId.isEmpty) return null;
+
+      final imagesRaw = source['images'];
+      final imageList = imagesRaw is List
+          ? imagesRaw.map((e) => e.toString()).toList()
+          : <String>[];
+
+      return _FavoriteItem(
+        propertyId: propId,
+        title: (source['title'] ?? 'Untitled Property').toString(),
+        location: (source['location'] ?? 'Unknown location').toString(),
+        price: _asDouble(source['price']),
+        images: imageList,
+      );
     }
 
-    final imagesRaw = source['images'];
-    final imageList = imagesRaw is List
-        ? imagesRaw.map((e) => e.toString()).toList()
-        : <String>[];
+    // property is just a string ObjectId (not populated)
+    if (property is String && property.isNotEmpty) {
+      return _FavoriteItem(
+        propertyId: property,
+        title: (map['title'] ?? 'Untitled Property').toString(),
+        location: (map['location'] ?? 'Unknown location').toString(),
+        price: _asDouble(map['price']),
+        images: const [],
+      );
+    }
 
-    final id = (source['_id'] ?? source['id'] ?? '').toString();
-    final title = (source['title'] ?? 'Untitled Property').toString();
-    final location = (source['location'] ?? 'Unknown location').toString();
-    final price = _asDouble(source['price']);
-
-    if (id.isEmpty) return null;
-
-    return _FavoriteItem(
-      id: id,
-      title: title,
-      location: location,
-      price: price,
-      images: imageList,
-    );
+    // property is null (deleted property) – skip this item
+    return null;
   }
 
   static double _asDouble(dynamic value) {
