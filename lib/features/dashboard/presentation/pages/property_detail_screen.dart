@@ -1,8 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:rentora/core/api/api_client.dart';
 import 'package:rentora/core/api/api_endpoints.dart';
+import 'package:rentora/core/services/storage/user_session_service.dart';
+import 'package:rentora/core/utils/property_coordinates.dart';
+import 'dart:convert';
+import 'package:intl/intl.dart';
+import 'package:rentora/features/dashboard/presentation/pages/create_property_screen.dart';
 import 'package:rentora/features/dashboard/domain/entities/dashboard_property_entity.dart';
+import 'package:rentora/features/dashboard/presentation/widgets/property_location_preview.dart';
 
 class PropertyDetailScreen extends ConsumerStatefulWidget {
   final DashboardPropertyEntity property;
@@ -20,6 +27,12 @@ class _PropertyDetailScreenState extends ConsumerState<PropertyDetailScreen> {
   Map<String, dynamic>? _details;
   PageController? _imagePageController;
   int _currentImageIndex = 0;
+  bool _isOwner = false;
+  String? _ownerName;
+  String? _ownerEmail;
+  PropertyCoordinates? _userCoordinates;
+  bool _locatingUser = false;
+  String? _locationError;
 
   PageController get _pageController {
     _imagePageController ??= PageController(initialPage: _currentImageIndex);
@@ -53,8 +66,39 @@ class _PropertyDetailScreenState extends ConsumerState<PropertyDetailScreen> {
       final extracted = _extractMap(response.data);
 
       if (!mounted) return;
+      // Determine ownership by comparing stored user id with owner field
+      final sessionService = ref.read(userSessionServiceProvider);
+      final session = await sessionService.getUserSession();
+      final currentUserId = session['id'];
+
+      String? ownerId;
+      String? ownerName;
+      String? ownerEmail;
+      if (extracted != null) {
+        final owner =
+            extracted['owner'] ??
+            extracted['user'] ??
+            extracted['listedBy'] ??
+            extracted['ownerId'];
+        if (owner is String) ownerId = owner;
+        if (owner is Map) {
+          if (owner['_id'] != null) ownerId = owner['_id'].toString();
+          if (owner['id'] != null) ownerId = owner['id'].toString();
+          ownerName =
+              (owner['name'] ?? owner['fullName'] ?? owner['displayName'])
+                  ?.toString();
+          ownerEmail = (owner['email'] ?? owner['username'])?.toString();
+        }
+      }
+
       setState(() {
         _details = extracted;
+        _isOwner =
+            currentUserId != null &&
+            ownerId != null &&
+            currentUserId == ownerId;
+        _ownerName = ownerName;
+        _ownerEmail = ownerEmail;
         _loading = false;
       });
     } catch (e) {
@@ -146,6 +190,109 @@ class _PropertyDetailScreenState extends ConsumerState<PropertyDetailScreen> {
     return images.where((image) => seen.add(image)).toList();
   }
 
+  Future<void> _removeImageByUrl(String imageUrl) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Remove image'),
+        content: const Text('Remove this image from the property?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Remove'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true) return;
+
+    try {
+      setState(() => _loading = true);
+      final client = ref.read(apiClientProvider);
+      final id = widget.property.id;
+
+      // Send removedImages as JSON array; backend should handle URL/path matching
+      await client.put(
+        ApiEndpoints.propertyById(id),
+        data: {
+          'removedImages': [imageUrl],
+        },
+      );
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Image removed'),
+          backgroundColor: Color(0xFF2F9E9A),
+        ),
+      );
+      await _loadDetails();
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to remove image: $e'),
+          backgroundColor: Colors.red.shade600,
+        ),
+      );
+      setState(() => _loading = false);
+    }
+  }
+
+  Future<void> _locateCurrentUser() async {
+    setState(() {
+      _locatingUser = true;
+      _locationError = null;
+    });
+
+    try {
+      final serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        throw Exception('Please enable location service on your device.');
+      }
+
+      var permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+      }
+      if (permission == LocationPermission.denied ||
+          permission == LocationPermission.deniedForever) {
+        throw Exception(
+          'Location permission is required to show your position on the map.',
+        );
+      }
+
+      final position = await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.high,
+          timeLimit: Duration(seconds: 10),
+        ),
+      );
+
+      if (!mounted) return;
+      setState(() {
+        _userCoordinates = PropertyCoordinates(
+          latitude: position.latitude,
+          longitude: position.longitude,
+        ).rounded();
+        _locatingUser = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _locationError = e is Exception
+            ? e.toString().replaceFirst('Exception: ', '')
+            : 'Unable to fetch your current location.';
+        _locatingUser = false;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final property = _details ?? <String, dynamic>{};
@@ -184,6 +331,7 @@ class _PropertyDetailScreenState extends ConsumerState<PropertyDetailScreen> {
         ? amenitiesRaw.map((item) => item.toString()).toList()
         : <String>[];
 
+    final propertyCoordinates = parsePropertyCoordinates(property);
     final imageUrls = _resolveImages(_details);
     final isAvailable = status == 'available' || status == 'approved';
 
@@ -357,6 +505,34 @@ class _PropertyDetailScreenState extends ConsumerState<PropertyDetailScreen> {
                                             ),
                                           ),
                                         ),
+                                      // Owner-only delete overlay on main image
+                                      if (_isOwner)
+                                        Positioned(
+                                          top: 10,
+                                          left: 10,
+                                          child: ElevatedButton(
+                                            onPressed: () {
+                                              final current =
+                                                  imageUrls[_currentImageIndex];
+                                              _removeImageByUrl(current);
+                                            },
+                                            style: ElevatedButton.styleFrom(
+                                              backgroundColor: Colors.red
+                                                  .withOpacity(0.9),
+                                              minimumSize: const Size(36, 36),
+                                              padding: EdgeInsets.zero,
+                                              shape: RoundedRectangleBorder(
+                                                borderRadius:
+                                                    BorderRadius.circular(10),
+                                              ),
+                                            ),
+                                            child: const Icon(
+                                              Icons.delete_outline,
+                                              size: 18,
+                                              color: Colors.white,
+                                            ),
+                                          ),
+                                        ),
                                     ],
                                   ),
                           ),
@@ -456,7 +632,18 @@ class _PropertyDetailScreenState extends ConsumerState<PropertyDetailScreen> {
                                   ),
                                 ],
                               ),
-                              const SizedBox(height: 14),
+                              if (propertyCoordinates != null) ...[
+                                const SizedBox(height: 12),
+                                PropertyLocationPreview(
+                                  propertyCoordinates: propertyCoordinates,
+                                  userCoordinates: _userCoordinates,
+                                  locatingUser: _locatingUser,
+                                  locationError: _locationError,
+                                  onLocateUser: _locateCurrentUser,
+                                ),
+                                const SizedBox(height: 14),
+                              ] else
+                                const SizedBox(height: 14),
                               Text(
                                 'Rs. ${price.toStringAsFixed(0)} / month',
                                 style: const TextStyle(
@@ -489,6 +676,81 @@ class _PropertyDetailScreenState extends ConsumerState<PropertyDetailScreen> {
                                 ),
                               ),
                               const SizedBox(height: 16),
+
+                              // Availability display (if provided by backend)
+                              (() {
+                                final rawAvail = property['availability'];
+                                DateTime? aStart;
+                                DateTime? aEnd;
+
+                                dynamic availSource = rawAvail;
+                                if (rawAvail is String &&
+                                    rawAvail.trim().isNotEmpty) {
+                                  try {
+                                    availSource = jsonDecode(rawAvail);
+                                  } catch (_) {
+                                    availSource = rawAvail;
+                                  }
+                                }
+
+                                if (availSource is List &&
+                                    availSource.isNotEmpty) {
+                                  final first = availSource.first;
+                                  if (first is Map) {
+                                    try {
+                                      aStart = DateTime.parse(
+                                        first['startDate'].toString(),
+                                      );
+                                    } catch (_) {}
+                                    try {
+                                      aEnd = DateTime.parse(
+                                        first['endDate'].toString(),
+                                      );
+                                    } catch (_) {}
+                                  }
+                                }
+
+                                if (aStart != null && aEnd != null) {
+                                  final fmt = DateFormat('MMM d, y');
+                                  return Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      const Text(
+                                        'Availability',
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w700,
+                                          color: Color(0xFF103033),
+                                        ),
+                                      ),
+                                      const SizedBox(height: 6),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 12,
+                                          vertical: 10,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xFFF4F8F7),
+                                          borderRadius: BorderRadius.circular(
+                                            8,
+                                          ),
+                                        ),
+                                        child: Text(
+                                          '${fmt.format(aStart)} — ${fmt.format(aEnd)}',
+                                          style: const TextStyle(
+                                            color: Color(0xFF5E7A7E),
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(height: 12),
+                                    ],
+                                  );
+                                }
+
+                                return const SizedBox.shrink();
+                              })(),
+
                               if (description.trim().isNotEmpty) ...[
                                 const Text(
                                   'Description',
@@ -577,6 +839,83 @@ class _PropertyDetailScreenState extends ConsumerState<PropertyDetailScreen> {
                             ],
                           ),
                         ),
+
+                        // Owner actions
+                        if (_isOwner) ...[
+                          const SizedBox(height: 12),
+                          _DetailCard(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  'Owner Actions',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w700,
+                                    color: Color(0xFF103033),
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                OutlinedButton(
+                                  onPressed: () async {
+                                    // Open edit screen with current details
+                                    final merged = <String, dynamic>{};
+                                    if (_details != null) {
+                                      merged.addAll(_details!);
+                                    }
+                                    // include top-level summary fields as fallback
+                                    merged.putIfAbsent(
+                                      'title',
+                                      () => widget.property.title,
+                                    );
+                                    merged.putIfAbsent(
+                                      'location',
+                                      () => widget.property.location,
+                                    );
+                                    merged.putIfAbsent(
+                                      'price',
+                                      () => widget.property.price,
+                                    );
+                                    merged.putIfAbsent(
+                                      'images',
+                                      () => widget.property.images,
+                                    );
+                                    merged.putIfAbsent(
+                                      'coordinates',
+                                      () => property['coordinates'],
+                                    );
+
+                                    await Navigator.of(context).push(
+                                      MaterialPageRoute(
+                                        builder: (_) => CreatePropertyScreen(
+                                          property: merged,
+                                          propertyId: widget.property.id,
+                                        ),
+                                      ),
+                                    );
+
+                                    // Refresh details after possible edit
+                                    await _loadDetails();
+                                  },
+                                  style: OutlinedButton.styleFrom(
+                                    foregroundColor: const Color(0xFF2F9E9A),
+                                    side: const BorderSide(
+                                      color: Color(0xFF2F9E9A),
+                                    ),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 12,
+                                      horizontal: 16,
+                                    ),
+                                  ),
+                                  child: const Text('Edit This Property'),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
                       ],
                     ],
                   ),

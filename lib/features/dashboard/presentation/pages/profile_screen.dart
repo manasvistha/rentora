@@ -149,31 +149,7 @@ class ProfileScreen extends ConsumerWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // ── Back Button ──
-              GestureDetector(
-                onTap: () {
-                  Navigator.of(context).pushAndRemoveUntil(
-                    MaterialPageRoute(
-                      builder: (_) =>
-                          const BottomnavigationScreen(initialIndex: 0),
-                    ),
-                    (route) => false,
-                  );
-                },
-                child: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: _tealLight.withValues(alpha: 0.1),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(
-                    Icons.arrow_back,
-                    color: _tealLight,
-                    size: 24,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 10),
+              // Header (with back icon embedded)
 
               // ── Header ──
               Container(
@@ -202,13 +178,43 @@ class ProfileScreen extends ConsumerWidget {
                     ),
                   ],
                 ),
-                child: const Text(
-                  'My Profile',
-                  style: TextStyle(
-                    fontSize: 26,
-                    fontWeight: FontWeight.bold,
-                    color: _dark,
-                  ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    GestureDetector(
+                      onTap: () {
+                        Navigator.of(context).pushAndRemoveUntil(
+                          MaterialPageRoute(
+                            builder: (_) =>
+                                const BottomnavigationScreen(initialIndex: 0),
+                          ),
+                          (route) => false,
+                        );
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.all(8),
+                        margin: const EdgeInsets.only(right: 12),
+                        decoration: BoxDecoration(
+                          color: _tealLight.withValues(alpha: 0.1),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          Icons.arrow_back,
+                          color: _tealLight,
+                          size: 20,
+                        ),
+                      ),
+                    ),
+                    Text(
+                      'My Profile',
+                      style: const TextStyle(
+                        fontSize: 26,
+                        fontWeight: FontWeight.bold,
+                        color: _dark,
+                      ),
+                    ),
+                  ],
                 ),
               ),
 

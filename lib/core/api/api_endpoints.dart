@@ -85,4 +85,9 @@ class ApiEndpoints {
   static const String favorites = 'favorite'; // GET -> /api/favorite
   static String favoriteByProperty(String propertyId) =>
       'favorite/$propertyId'; // POST/DELETE -> /api/favorite/:propertyId
+
+  // ============ Notification Endpoints ============
+  static const String notificationList = 'notification';
+  static String notificationMarkRead(String id) => 'notification/$id/read';
+  static const String notificationMarkAllRead = 'notification/read-all';
 }

@@ -1,13 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:rentora/core/api/api_client.dart';
+import 'package:rentora/core/api/api_endpoints.dart';
 import 'package:rentora/features/dashboard/domain/entities/dashboard_booking_entity.dart';
 import 'package:rentora/features/dashboard/domain/entities/dashboard_property_entity.dart';
 import 'package:rentora/features/dashboard/presentation/pages/property_detail_screen.dart';
+import 'package:rentora/features/dashboard/presentation/pages/create_property_screen.dart';
 import 'package:rentora/features/dashboard/presentation/providers/dashboard_data_providers.dart';
 
+enum PropertyListPreset { totalMarket, availableNow, myListings }
+
 class AllPropertiesScreen extends ConsumerStatefulWidget {
-  const AllPropertiesScreen({super.key});
+  final PropertyListPreset initialPreset;
+
+  const AllPropertiesScreen({
+    super.key,
+    this.initialPreset = PropertyListPreset.totalMarket,
+  });
 
   @override
   ConsumerState<AllPropertiesScreen> createState() =>
@@ -55,7 +65,15 @@ class _AllPropertiesScreenState extends ConsumerState<AllPropertiesScreen> {
     final minPrice = double.tryParse(_minPriceController.text.trim());
     final maxPrice = double.tryParse(_maxPriceController.text.trim());
 
-    return items.where((item) {
+    final presetItems = switch (widget.initialPreset) {
+      PropertyListPreset.availableNow =>
+        items
+            .where((item) => item.status.toLowerCase() == 'available')
+            .toList(),
+      _ => items,
+    };
+
+    return presetItems.where((item) {
       final matchesQuery =
           query.isEmpty ||
           item.title.toLowerCase().contains(query) ||
@@ -70,7 +88,15 @@ class _AllPropertiesScreenState extends ConsumerState<AllPropertiesScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final state = ref.watch(allPropertiesProvider(false));
+    final state = widget.initialPreset == PropertyListPreset.myListings
+        ? ref.watch(myPropertiesProvider(false))
+        : ref.watch(allPropertiesProvider(false));
+
+    final emptyMessage = switch (widget.initialPreset) {
+      PropertyListPreset.availableNow => 'No available properties found.',
+      PropertyListPreset.myListings => 'You have no listings yet.',
+      PropertyListPreset.totalMarket => 'No properties found.',
+    };
 
     return _DashboardScaffold(
       child: state.when(
@@ -78,8 +104,13 @@ class _AllPropertiesScreenState extends ConsumerState<AllPropertiesScreen> {
           final filteredItems = _filterProperties(items);
           return _PropertyList(
             items: filteredItems,
-            emptyMessage: 'No properties found.',
-            onRefresh: () => ref.refresh(allPropertiesProvider(true).future),
+            emptyMessage: emptyMessage,
+            onRefresh: () {
+              if (widget.initialPreset == PropertyListPreset.myListings) {
+                return ref.refresh(myPropertiesProvider(true).future);
+              }
+              return ref.refresh(allPropertiesProvider(true).future);
+            },
             onItemTap: (item) {
               Navigator.of(context).push(
                 MaterialPageRoute(
@@ -96,7 +127,13 @@ class _AllPropertiesScreenState extends ConsumerState<AllPropertiesScreen> {
         },
         error: (error, _) => _ErrorState(
           message: error.toString(),
-          onRetry: () => ref.refresh(allPropertiesProvider(true)),
+          onRetry: () {
+            if (widget.initialPreset == PropertyListPreset.myListings) {
+              ref.refresh(myPropertiesProvider(true));
+              return;
+            }
+            ref.refresh(allPropertiesProvider(true));
+          },
         ),
         loading: () => const Center(child: CircularProgressIndicator()),
       ),
@@ -104,11 +141,87 @@ class _AllPropertiesScreenState extends ConsumerState<AllPropertiesScreen> {
   }
 }
 
-class MyListingsScreen extends ConsumerWidget {
+class MyListingsScreen extends ConsumerStatefulWidget {
   const MyListingsScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<MyListingsScreen> createState() => _MyListingsScreenState();
+}
+
+class _MyListingsScreenState extends ConsumerState<MyListingsScreen> {
+  Future<void> _refreshListings({bool forceRefresh = true}) async {
+    if (forceRefresh) {
+      await ref.refresh(myPropertiesProvider(true).future);
+    }
+    ref.invalidate(myPropertiesProvider(false));
+    ref.invalidate(myPropertiesProvider(true));
+    ref.invalidate(allPropertiesProvider(false));
+    ref.invalidate(allPropertiesProvider(true));
+  }
+
+  Future<void> _deleteListing(DashboardPropertyEntity item) async {
+    final shouldDelete = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text('Delete listing'),
+          content: Text('Delete "${item.title}" permanently?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              style: TextButton.styleFrom(foregroundColor: Colors.red),
+              child: const Text('Delete'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (shouldDelete != true) return;
+
+    try {
+      final client = ref.read(apiClientProvider);
+      await client.delete(ApiEndpoints.propertyById(item.id));
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Listing deleted.')));
+      await _refreshListings();
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Failed to delete listing: $e')));
+    }
+  }
+
+  Future<void> _editListing(DashboardPropertyEntity item) async {
+    // Open full create/edit screen with property data so user can update all fields and images
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => CreatePropertyScreen(
+          property: {
+            '_id': item.id,
+            'title': item.title,
+            'location': item.location,
+            'price': item.price,
+            'images': item.images,
+          },
+          propertyId: item.id,
+        ),
+      ),
+    );
+
+    // After returning, refresh listings
+    await _refreshListings();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final state = ref.watch(myPropertiesProvider(false));
 
     return _DashboardScaffold(
@@ -116,7 +229,7 @@ class MyListingsScreen extends ConsumerWidget {
         data: (items) => _PropertyList(
           items: items,
           emptyMessage: 'You have no listings yet.',
-          onRefresh: () => ref.refresh(myPropertiesProvider(true).future),
+          onRefresh: _refreshListings,
           onItemTap: (item) {
             Navigator.of(context).push(
               MaterialPageRoute(
@@ -124,10 +237,12 @@ class MyListingsScreen extends ConsumerWidget {
               ),
             );
           },
+          onEditTap: _editListing,
+          onDeleteTap: _deleteListing,
         ),
         error: (error, _) => _ErrorState(
           message: error.toString(),
-          onRetry: () => ref.refresh(myPropertiesProvider(true)),
+          onRetry: () => _refreshListings(),
         ),
         loading: () => const Center(child: CircularProgressIndicator()),
       ),
@@ -227,6 +342,8 @@ class _PropertyList extends StatelessWidget {
   final Future<void> Function() onRefresh;
   final Widget? header;
   final void Function(DashboardPropertyEntity item)? onItemTap;
+  final Future<void> Function(DashboardPropertyEntity item)? onEditTap;
+  final Future<void> Function(DashboardPropertyEntity item)? onDeleteTap;
 
   const _PropertyList({
     required this.items,
@@ -234,6 +351,8 @@ class _PropertyList extends StatelessWidget {
     required this.onRefresh,
     this.header,
     this.onItemTap,
+    this.onEditTap,
+    this.onDeleteTap,
   });
 
   @override
@@ -261,6 +380,8 @@ class _PropertyList extends StatelessWidget {
           return _PropertyListCard(
             item: item,
             onTap: onItemTap == null ? null : () => onItemTap!(item),
+            onEdit: onEditTap == null ? null : () => onEditTap!(item),
+            onDelete: onDeleteTap == null ? null : () => onDeleteTap!(item),
           );
         },
       ),
@@ -367,8 +488,15 @@ class _PropertyFilterBar extends StatelessWidget {
 class _PropertyListCard extends StatelessWidget {
   final DashboardPropertyEntity item;
   final VoidCallback? onTap;
+  final VoidCallback? onEdit;
+  final VoidCallback? onDelete;
 
-  const _PropertyListCard({required this.item, this.onTap});
+  const _PropertyListCard({
+    required this.item,
+    this.onTap,
+    this.onEdit,
+    this.onDelete,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -443,6 +571,48 @@ class _PropertyListCard extends StatelessWidget {
                           color: Color(0xFF0F766E),
                         ),
                       ),
+                      if (onEdit != null || onDelete != null) ...[
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            if (onEdit != null)
+                              TextButton.icon(
+                                onPressed: onEdit,
+                                style: TextButton.styleFrom(
+                                  foregroundColor: const Color(0xFF1D4ED8),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 4,
+                                  ),
+                                  minimumSize: const Size(0, 30),
+                                  tapTargetSize:
+                                      MaterialTapTargetSize.shrinkWrap,
+                                ),
+                                icon: const Icon(Icons.edit_outlined, size: 16),
+                                label: const Text('Edit'),
+                              ),
+                            if (onDelete != null)
+                              TextButton.icon(
+                                onPressed: onDelete,
+                                style: TextButton.styleFrom(
+                                  foregroundColor: const Color(0xFFB91C1C),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 4,
+                                  ),
+                                  minimumSize: const Size(0, 30),
+                                  tapTargetSize:
+                                      MaterialTapTargetSize.shrinkWrap,
+                                ),
+                                icon: const Icon(
+                                  Icons.delete_outline,
+                                  size: 16,
+                                ),
+                                label: const Text('Delete'),
+                              ),
+                          ],
+                        ),
+                      ],
                     ],
                   ),
                 ),

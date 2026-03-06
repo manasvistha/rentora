@@ -8,9 +8,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:rentora/core/api/api_client.dart';
 import 'package:rentora/core/api/api_endpoints.dart';
+import 'package:rentora/core/utils/property_coordinates.dart';
+import 'package:rentora/features/dashboard/presentation/widgets/location_picker_card.dart';
 
 class CreatePropertyScreen extends ConsumerStatefulWidget {
-  const CreatePropertyScreen({super.key});
+  final Map<String, dynamic>? property;
+  final String? propertyId;
+
+  const CreatePropertyScreen({super.key, this.property, this.propertyId});
 
   @override
   ConsumerState<CreatePropertyScreen> createState() =>
@@ -34,6 +39,10 @@ class _CreatePropertyScreenState extends ConsumerState<CreatePropertyScreen> {
   bool _parking = false;
   final List<String> _amenities = [];
   final List<XFile> _images = [];
+  final List<String> _remoteImages = [];
+  final List<String> _removedRemoteImages = [];
+  bool _isEdit = false;
+  PropertyCoordinates? _pinnedCoordinates;
 
   DateTime? _availStart;
   DateTime? _availEnd;
@@ -65,6 +74,82 @@ class _CreatePropertyScreenState extends ConsumerState<CreatePropertyScreen> {
     _areaCtrl.dispose();
     _floorCtrl.dispose();
     super.dispose();
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    final prop = widget.property;
+    if (prop != null) {
+      _isEdit = true;
+      _titleCtrl.text = (prop['title'] ?? '') as String;
+      _descCtrl.text = (prop['description'] ?? '') as String;
+      _locationCtrl.text = (prop['location'] ?? '') as String;
+      _priceCtrl.text = (prop['price'] ?? '')?.toString() ?? '';
+      _propertyType = (prop['propertyType'] ?? _propertyType) as String;
+      _petPolicy = (prop['petPolicy'] ?? _petPolicy) as String;
+      _furnished = (prop['furnished'] ?? _furnished) as bool;
+      _parking = (prop['parking'] ?? _parking) as bool;
+      _pinnedCoordinates = parsePropertyCoordinates(prop);
+
+      if (prop['bedrooms'] != null) {
+        _bedroomsCtrl.text = prop['bedrooms'].toString();
+      }
+      if (prop['bathrooms'] != null) {
+        _bathroomsCtrl.text = prop['bathrooms'].toString();
+      }
+      if (prop['area'] != null) {
+        _areaCtrl.text = prop['area'].toString();
+      }
+      if (prop['floor'] != null) {
+        _floorCtrl.text = prop['floor'].toString();
+      }
+
+      // Amenities
+      final List? amen = prop['amenities'] as List?;
+      if (amen != null) {
+        _amenities.addAll(amen.whereType<String>());
+      }
+
+      // Availability
+      final List? avail = prop['availability'] as List?;
+      if (avail != null && avail.isNotEmpty) {
+        try {
+          final first = avail.first as Map<String, dynamic>;
+          _availStart = DateTime.parse(first['startDate'] as String);
+          _availEnd = DateTime.parse(first['endDate'] as String);
+        } catch (_) {}
+      }
+
+      // Images (expecting list of URLs)
+      final List? imgs = prop['images'] as List?;
+      if (imgs != null) {
+        for (final img in imgs) {
+          if (img == null) continue;
+          if (img is String) {
+            _remoteImages.add(img);
+            continue;
+          }
+
+          if (img is Map) {
+            final url =
+                img['url'] ??
+                img['path'] ??
+                img['src'] ??
+                img['image'] ??
+                img['imageUrl'];
+            if (url is String && url.isNotEmpty) {
+              _remoteImages.add(url);
+              continue;
+            }
+          }
+
+          // fallback to toString()
+          final text = img.toString().trim();
+          if (text.isNotEmpty) _remoteImages.add(text);
+        }
+      }
+    }
   }
 
   Future<void> _pickFromGallery() async {
@@ -143,9 +228,16 @@ class _CreatePropertyScreenState extends ConsumerState<CreatePropertyScreen> {
     setState(() => _images.removeAt(index));
   }
 
+  void _removeRemoteImage(int index) {
+    setState(() {
+      final removed = _remoteImages.removeAt(index);
+      _removedRemoteImages.add(removed);
+    });
+  }
+
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
-    if (_images.isEmpty) {
+    if ((_images.length + _remoteImages.length) == 0) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please add at least one image')),
       );
@@ -178,6 +270,12 @@ class _CreatePropertyScreenState extends ConsumerState<CreatePropertyScreen> {
         MapEntry('furnished', _furnished.toString()),
         MapEntry('parking', _parking.toString()),
       ]);
+
+      if (isValidCoordinates(_pinnedCoordinates)) {
+        formData.fields.add(
+          MapEntry('coordinates', jsonEncode(_pinnedCoordinates!.toJson())),
+        );
+      }
 
       if (_bedroomsCtrl.text.trim().isNotEmpty) {
         formData.fields.add(MapEntry('bedrooms', _bedroomsCtrl.text.trim()));
@@ -216,13 +314,39 @@ class _CreatePropertyScreenState extends ConsumerState<CreatePropertyScreen> {
         );
       }
 
-      await client.uploadFile(ApiEndpoints.propertyList, formData: formData);
+      // Inform backend which existing remote images to keep/remove when editing
+      formData.fields.add(
+        MapEntry('existingImages', jsonEncode(_remoteImages)),
+      );
+      formData.fields.add(
+        MapEntry('removedImages', jsonEncode(_removedRemoteImages)),
+      );
+
+      if (_isEdit) {
+        final id =
+            widget.propertyId ??
+            widget.property?['_id'] ??
+            widget.property?['id'];
+        if (id == null) throw 'Missing property id for update';
+        await client.put(
+          ApiEndpoints.propertyById(id.toString()),
+          data: formData,
+        );
+      } else {
+        await client.uploadFile(ApiEndpoints.propertyList, formData: formData);
+      }
 
       if (!mounted) return;
+      final successMessage = _isEdit
+          ? 'Property updated successfully!'
+          : 'Property created successfully!';
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Property created successfully!'),
-          backgroundColor: Color(0xFF2F9E9A),
+        SnackBar(
+          content: Text(
+            successMessage,
+            style: const TextStyle(color: Colors.white),
+          ),
+          backgroundColor: Colors.green.shade600,
         ),
       );
       Navigator.of(context).pop();
@@ -231,6 +355,64 @@ class _CreatePropertyScreenState extends ConsumerState<CreatePropertyScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Failed to create property: $e'),
+          backgroundColor: Colors.red.shade600,
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _submitting = false);
+    }
+  }
+
+  Future<void> _confirmDelete() async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Delete property'),
+        content: const Text('Are you sure you want to delete this property?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+
+    if (ok == true) {
+      await _deleteProperty();
+    }
+  }
+
+  Future<void> _deleteProperty() async {
+    try {
+      setState(() => _submitting = true);
+      final client = ref.read(apiClientProvider);
+      final id =
+          widget.propertyId ??
+          widget.property?['_id'] ??
+          widget.property?['id'];
+      if (id == null) throw 'Missing property id for delete';
+      await client.delete(ApiEndpoints.propertyById(id.toString()));
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text(
+            'Property deleted',
+            style: TextStyle(color: Colors.white),
+          ),
+          backgroundColor: Colors.green.shade600,
+        ),
+      );
+      Navigator.of(context).pop();
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to delete: $e'),
           backgroundColor: Colors.red.shade600,
         ),
       );
@@ -263,14 +445,23 @@ class _CreatePropertyScreenState extends ConsumerState<CreatePropertyScreen> {
                       icon: const Icon(Icons.arrow_back, color: Colors.white),
                     ),
                     const SizedBox(width: 4),
-                    const Text(
-                      'Add New Property',
-                      style: TextStyle(
+                    Text(
+                      _isEdit ? 'Edit Property' : 'Add New Property',
+                      style: const TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
                         color: Colors.white,
                       ),
                     ),
+                    const Spacer(),
+                    if (_isEdit)
+                      IconButton(
+                        onPressed: _confirmDelete,
+                        icon: const Icon(
+                          Icons.delete_forever,
+                          color: Colors.white,
+                        ),
+                      ),
                   ],
                 ),
               ),
@@ -291,61 +482,122 @@ class _CreatePropertyScreenState extends ConsumerState<CreatePropertyScreen> {
                           icon: Icons.photo_library_outlined,
                           child: Column(
                             children: [
-                              if (_images.isNotEmpty)
+                              if (_remoteImages.isNotEmpty ||
+                                  _images.isNotEmpty)
                                 SizedBox(
                                   height: 100,
                                   child: ListView.separated(
                                     scrollDirection: Axis.horizontal,
-                                    itemCount: _images.length,
+                                    itemCount:
+                                        _remoteImages.length + _images.length,
                                     separatorBuilder: (_, __) =>
                                         const SizedBox(width: 8),
-                                    itemBuilder: (_, i) => Stack(
-                                      children: [
-                                        ClipRRect(
-                                          borderRadius: BorderRadius.circular(
-                                            10,
-                                          ),
-                                          child: Image.file(
-                                            File(_images[i].path),
-                                            width: 100,
-                                            height: 100,
-                                            fit: BoxFit.cover,
-                                          ),
-                                        ),
-                                        Positioned(
-                                          top: 4,
-                                          right: 4,
-                                          child: GestureDetector(
-                                            onTap: () => _removeImage(i),
-                                            child: Container(
-                                              padding: const EdgeInsets.all(2),
-                                              decoration: const BoxDecoration(
-                                                color: Colors.red,
-                                                shape: BoxShape.circle,
+                                    itemBuilder: (_, i) {
+                                      if (i < _remoteImages.length) {
+                                        final url = _remoteImages[i];
+                                        return Stack(
+                                          children: [
+                                            ClipRRect(
+                                              borderRadius:
+                                                  BorderRadius.circular(10),
+                                              child: Image.network(
+                                                url,
+                                                width: 100,
+                                                height: 100,
+                                                fit: BoxFit.cover,
+                                                errorBuilder: (_, __, ___) =>
+                                                    Container(
+                                                      width: 100,
+                                                      height: 100,
+                                                      color: Colors.grey[300],
+                                                      child: const Icon(
+                                                        Icons.broken_image,
+                                                      ),
+                                                    ),
                                               ),
-                                              child: const Icon(
-                                                Icons.close,
-                                                size: 16,
-                                                color: Colors.white,
+                                            ),
+                                            Positioned(
+                                              top: 4,
+                                              right: 4,
+                                              child: GestureDetector(
+                                                onTap: () =>
+                                                    _removeRemoteImage(i),
+                                                child: Container(
+                                                  padding: const EdgeInsets.all(
+                                                    2,
+                                                  ),
+                                                  decoration:
+                                                      const BoxDecoration(
+                                                        color: Colors.red,
+                                                        shape: BoxShape.circle,
+                                                      ),
+                                                  child: const Icon(
+                                                    Icons.close,
+                                                    size: 16,
+                                                    color: Colors.white,
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        );
+                                      }
+
+                                      final localIndex =
+                                          i - _remoteImages.length;
+                                      return Stack(
+                                        children: [
+                                          ClipRRect(
+                                            borderRadius: BorderRadius.circular(
+                                              10,
+                                            ),
+                                            child: Image.file(
+                                              File(_images[localIndex].path),
+                                              width: 100,
+                                              height: 100,
+                                              fit: BoxFit.cover,
+                                            ),
+                                          ),
+                                          Positioned(
+                                            top: 4,
+                                            right: 4,
+                                            child: GestureDetector(
+                                              onTap: () =>
+                                                  _removeImage(localIndex),
+                                              child: Container(
+                                                padding: const EdgeInsets.all(
+                                                  2,
+                                                ),
+                                                decoration: const BoxDecoration(
+                                                  color: Colors.red,
+                                                  shape: BoxShape.circle,
+                                                ),
+                                                child: const Icon(
+                                                  Icons.close,
+                                                  size: 16,
+                                                  color: Colors.white,
+                                                ),
                                               ),
                                             ),
                                           ),
-                                        ),
-                                      ],
-                                    ),
+                                        ],
+                                      );
+                                    },
                                   ),
                                 ),
                               if (_images.isNotEmpty)
                                 const SizedBox(height: 12),
                               OutlinedButton.icon(
-                                onPressed: _images.length >= 10
+                                onPressed:
+                                    (_remoteImages.length + _images.length) >=
+                                        10
                                     ? null
                                     : _showImageSourceSheet,
                                 icon: const Icon(Icons.add_photo_alternate),
                                 label: Text(
-                                  _images.isEmpty
+                                  (_remoteImages.length + _images.length) == 0
                                       ? 'Add Images (max 10)'
-                                      : '${_images.length}/10 — Add More',
+                                      : '${_remoteImages.length + _images.length}/10 — Add More',
                                 ),
                                 style: OutlinedButton.styleFrom(
                                   foregroundColor: const Color(0xFF2F9E9A),
@@ -397,6 +649,16 @@ class _CreatePropertyScreenState extends ConsumerState<CreatePropertyScreen> {
                                 validator: (v) => v == null || v.trim().isEmpty
                                     ? 'Location is required'
                                     : null,
+                              ),
+                              const SizedBox(height: 12),
+                              LocationPickerCard(
+                                locationController: _locationCtrl,
+                                coordinates: _pinnedCoordinates,
+                                onCoordinatesChanged: (coordinates) {
+                                  setState(
+                                    () => _pinnedCoordinates = coordinates,
+                                  );
+                                },
                               ),
                               const SizedBox(height: 12),
                               _FormField(
