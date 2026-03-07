@@ -142,7 +142,7 @@ class ProfileScreen extends ConsumerWidget {
         .join();
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF4F8F8),
+      backgroundColor: const Color(0xFFE8F8F5),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
@@ -160,19 +160,19 @@ class ProfileScreen extends ConsumerWidget {
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: [
-                      Colors.white.withValues(alpha: 0.9),
-                      const Color(0xFFEFFAF7).withValues(alpha: 0.65),
+                      const Color(0xFFE8F8F5).withOpacity(0.9),
+                      const Color(0xFFEFFAF7).withOpacity(0.65),
                     ],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),
                   border: Border.all(
-                    color: const Color(0xFFAADCC4).withValues(alpha: 0.5),
+                    color: const Color(0xFFAADCC4).withOpacity(0.5),
                   ),
                   borderRadius: BorderRadius.circular(20),
                   boxShadow: [
                     BoxShadow(
-                      color: const Color(0xFF083531).withValues(alpha: 0.12),
+                      color: const Color(0xFF083531).withOpacity(0.12),
                       blurRadius: 30,
                       offset: const Offset(0, 12),
                     ),
@@ -196,7 +196,7 @@ class ProfileScreen extends ConsumerWidget {
                         padding: const EdgeInsets.all(8),
                         margin: const EdgeInsets.only(right: 12),
                         decoration: BoxDecoration(
-                          color: _tealLight.withValues(alpha: 0.1),
+                          color: _tealLight.withOpacity(0.1),
                           shape: BoxShape.circle,
                         ),
                         child: Icon(
@@ -241,7 +241,7 @@ class ProfileScreen extends ConsumerWidget {
                   borderRadius: BorderRadius.circular(16),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.04),
+                      color: Colors.black.withOpacity(0.04),
                       blurRadius: 12,
                       offset: const Offset(0, 4),
                     ),
@@ -260,7 +260,7 @@ class ProfileScreen extends ConsumerWidget {
                               border: Border.all(color: _tealLight, width: 3),
                               boxShadow: [
                                 BoxShadow(
-                                  color: _teal.withValues(alpha: 0.2),
+                                  color: _teal.withOpacity(0.2),
                                   blurRadius: 8,
                                   offset: const Offset(0, 3),
                                 ),
@@ -372,7 +372,7 @@ class ProfileScreen extends ConsumerWidget {
                   borderRadius: BorderRadius.circular(16),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.04),
+                      color: Colors.black.withOpacity(0.04),
                       blurRadius: 12,
                       offset: const Offset(0, 4),
                     ),
@@ -568,7 +568,7 @@ class _MenuTile extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: color.withValues(alpha: 0.1),
+                  color: color.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Icon(icon, color: color, size: 22),
@@ -603,7 +603,7 @@ class _MenuTile extends StatelessWidget {
               ),
               Icon(
                 Icons.arrow_forward_ios,
-                color: const Color(0xFF4AA6A6).withValues(alpha: 0.5),
+                color: const Color(0xFF4AA6A6).withOpacity(0.5),
                 size: 16,
               ),
             ],

@@ -10,6 +10,8 @@ import 'package:intl/intl.dart';
 import 'package:rentora/features/dashboard/presentation/pages/create_property_screen.dart';
 import 'package:rentora/features/dashboard/domain/entities/dashboard_property_entity.dart';
 import 'package:rentora/features/dashboard/presentation/widgets/property_location_preview.dart';
+import 'package:rentora/features/message/domain/usecases/create_conversation_usecase.dart';
+import 'package:rentora/features/message/presentation/pages/chat_screen.dart';
 
 class PropertyDetailScreen extends ConsumerStatefulWidget {
   final DashboardPropertyEntity property;
@@ -28,6 +30,7 @@ class _PropertyDetailScreenState extends ConsumerState<PropertyDetailScreen> {
   PageController? _imagePageController;
   int _currentImageIndex = 0;
   bool _isOwner = false;
+  String? _ownerId;
   String? _ownerName;
   String? _ownerEmail;
   PropertyCoordinates? _userCoordinates;
@@ -97,6 +100,7 @@ class _PropertyDetailScreenState extends ConsumerState<PropertyDetailScreen> {
             currentUserId != null &&
             ownerId != null &&
             currentUserId == ownerId;
+        _ownerId = ownerId;
         _ownerName = ownerName;
         _ownerEmail = ownerEmail;
         _loading = false;
@@ -290,6 +294,52 @@ class _PropertyDetailScreenState extends ConsumerState<PropertyDetailScreen> {
             : 'Unable to fetch your current location.';
         _locatingUser = false;
       });
+    }
+  }
+
+  Future<void> _openConversationWithOwner() async {
+    try {
+      final ownerId = _ownerId;
+      if (ownerId == null || ownerId.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Owner information unavailable')),
+        );
+        return;
+      }
+
+      final session = await ref
+          .read(userSessionServiceProvider)
+          .getUserSession();
+      final currentUserId = session['id'];
+      if (currentUserId == null || currentUserId.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Please login again to start chat')),
+        );
+        return;
+      }
+
+      final usecase = ref.read(createConversationUseCaseProvider);
+      final res = await usecase.execute(participants: [currentUserId, ownerId]);
+
+      res.fold(
+        (failure) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(failure.message)));
+        },
+        (conversation) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => ChatScreen(conversationId: conversation.id),
+            ),
+          );
+        },
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Failed to start chat: $e')));
     }
   }
 
@@ -925,6 +975,21 @@ class _PropertyDetailScreenState extends ConsumerState<PropertyDetailScreen> {
           ),
         ),
       ),
+      floatingActionButton:
+          (!_isOwner && (_ownerId != null && _ownerId!.isNotEmpty))
+          ? FloatingActionButton.extended(
+              onPressed: _openConversationWithOwner,
+              backgroundColor: const Color(0xFF4F46E5),
+              icon: const Icon(Icons.chat_bubble_outline, color: Colors.white),
+              label: const Text(
+                'Chat with Owner',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            )
+          : null,
     );
   }
 }

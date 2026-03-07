@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:rentora/core/services/storage/user_session_service.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -19,7 +21,18 @@ class _SplashScreenState extends State<SplashScreen> {
 
     if (!mounted) return;
 
-    Navigator.pushReplacementNamed(context, '/onboarding');
+    final sessionService = UserSessionService(const FlutterSecureStorage());
+    final hasSession = await sessionService.hasSession();
+    if (!hasSession) {
+      Navigator.pushReplacementNamed(context, '/onboarding');
+      return;
+    }
+
+    final isAdmin = await sessionService.isAdmin();
+    Navigator.pushReplacementNamed(
+      context,
+      isAdmin ? '/admin' : '/bottomnavigation',
+    );
   }
 
   @override

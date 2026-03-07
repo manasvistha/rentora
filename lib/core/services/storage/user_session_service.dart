@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:jwt_decoder/jwt_decoder.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 final userSessionServiceProvider = Provider<UserSessionService>((ref) {
@@ -7,6 +8,30 @@ final userSessionServiceProvider = Provider<UserSessionService>((ref) {
 });
 
 class UserSessionService {
+  static String? normalizeRole(dynamic raw) {
+    if (raw == null) return null;
+    if (raw is String && raw.trim().isNotEmpty) {
+      return raw.trim().toLowerCase();
+    }
+    if (raw is Map<String, dynamic>) {
+      final name = raw['name'] ?? raw['role'] ?? raw['value'];
+      if (name is String && name.trim().isNotEmpty) {
+        return name.trim().toLowerCase();
+      }
+    }
+    return null;
+  }
+
+  static String? extractRoleFromToken(String? token) {
+    if (token == null || token.isEmpty) return null;
+    try {
+      final payload = JwtDecoder.decode(token);
+      return normalizeRole(payload['role'] ?? payload['roles']);
+    } catch (_) {
+      return null;
+    }
+  }
+
   final FlutterSecureStorage _secureStorage;
 
   UserSessionService(this._secureStorage);
@@ -16,6 +41,7 @@ class UserSessionService {
   static const String _userIdKey = 'user_id';
   static const String _userNameKey = 'user_name';
   static const String _userEmailKey = 'user_email';
+  static const String _userRoleKey = 'user_role';
 
   /// Saves the 4 core fields + token after a successful login/register
   Future<void> saveUserSession({
@@ -23,6 +49,7 @@ class UserSessionService {
     required String email,
     required String name,
     required String token,
+    String? role,
   }) async {
     final prefs = await SharedPreferences.getInstance();
 
@@ -33,6 +60,10 @@ class UserSessionService {
     await prefs.setString(_userIdKey, userId);
     await prefs.setString(_userEmailKey, email);
     await prefs.setString(_userNameKey, name);
+    final normalizedRole = normalizeRole(role) ?? extractRoleFromToken(token);
+    if (normalizedRole != null) {
+      await prefs.setString(_userRoleKey, normalizedRole);
+    }
   }
 
   /// Retrieves the JWT token for API headers
@@ -53,6 +84,7 @@ class UserSessionService {
       'id': prefs.getString(_userIdKey),
       'email': prefs.getString(_userEmailKey),
       'name': prefs.getString(_userNameKey),
+      'role': prefs.getString(_userRoleKey),
     };
   }
 
@@ -63,5 +95,25 @@ class UserSessionService {
     await prefs.remove(_userIdKey);
     await prefs.remove(_userEmailKey);
     await prefs.remove(_userNameKey);
+    await prefs.remove(_userRoleKey);
+  }
+
+  Future<String?> getUserRole() async {
+    final prefs = await SharedPreferences.getInstance();
+    final storedRole = normalizeRole(prefs.getString(_userRoleKey));
+    if (storedRole != null) return storedRole;
+
+    final tokenRole = extractRoleFromToken(await getToken());
+    if (tokenRole != null) {
+      await prefs.setString(_userRoleKey, tokenRole);
+    }
+    return tokenRole;
+  }
+
+  Future<bool> isAdmin() async {
+    final role = await getUserRole();
+    if (role == null) return false;
+    return role.toLowerCase() == 'admin' ||
+        role.toLowerCase() == 'administrator';
   }
 }

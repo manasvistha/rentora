@@ -1,5 +1,6 @@
 import 'package:rentora/features/auth/data/models/auth_hive_model.dart';
 import 'package:rentora/features/auth/domain/entities/auth_entity.dart';
+import 'package:rentora/core/services/storage/user_session_service.dart';
 
 class AuthApiModel {
   final String? id;
@@ -8,6 +9,7 @@ class AuthApiModel {
   final String? password;
   final String? token;
   final String? profilePicture;
+  final String? role;
 
   AuthApiModel({
     this.id,
@@ -16,6 +18,7 @@ class AuthApiModel {
     this.password,
     this.token,
     this.profilePicture,
+    this.role,
   });
 
   factory AuthApiModel.fromJson(Map<String, dynamic> json) {
@@ -26,6 +29,12 @@ class AuthApiModel {
       password: json['password'],
       token: json['token'],
       profilePicture: json['profilePicture'] ?? json['image'],
+      role: UserSessionService.normalizeRole(
+        json['role'] ??
+            (json['roles'] is List && json['roles'].isNotEmpty
+                ? json['roles'][0]
+                : json['roles']),
+      ),
     );
   }
 

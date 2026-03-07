@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+// admin
+import 'package:rentora/features/admin/presentation/pages/admin_dashboard_screen.dart';
 
 // Import your pages
 import 'package:rentora/features/splash/presentation/pages/splash_screen.dart';
@@ -25,6 +27,7 @@ class App extends StatelessWidget {
         '/login': (_) => const LoginPage(),
         '/signup': (_) => const SignupPage(),
         '/forgot': (_) => const ForgotScreen(),
+        '/admin': (_) => const AdminDashboardScreen(),
         '/bottomnavigation': (_) => const BottomnavigationScreen(),
       },
     );

@@ -90,4 +90,15 @@ class ApiEndpoints {
   static const String notificationList = 'notification';
   static String notificationMarkRead(String id) => 'notification/$id/read';
   static const String notificationMarkAllRead = 'notification/read-all';
+
+  // ============ Conversation Endpoints ============
+  static const String conversationList = 'conversation';
+  static String conversationGet(String id) => 'conversation/$id';
+  static const String conversationCreate = 'conversation';
+  static String conversationSendMessage(String id) =>
+      'conversation/$id/message';
+  static String conversationByBooking(String bookingId) =>
+      'conversation/booking/$bookingId';
+  static String conversationSendBookingMessage(String bookingId) =>
+      'conversation/booking/$bookingId/message';
 }

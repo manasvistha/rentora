@@ -106,11 +106,15 @@ class AuthRepository implements IAuthRepository {
 
         // Save token to session service
         if (apiModel.token != null && apiModel.token!.isNotEmpty) {
+          final resolvedRole =
+              UserSessionService.normalizeRole(apiModel.role) ??
+              UserSessionService.extractRoleFromToken(apiModel.token);
           await _sessionService.saveUserSession(
             userId: apiModel.id ?? '',
             email: apiModel.email,
             name: apiModel.name,
             token: apiModel.token!,
+            role: resolvedRole,
           );
         }
 
@@ -153,6 +157,20 @@ class AuthRepository implements IAuthRepository {
           // Store in local database for offline access
           final hiveModel = apiModel.toHiveModel();
           await _authLocalDataSource.register(hiveModel);
+          // Update saved session role if available
+          final token = await _sessionService.getToken();
+          if (token != null && token.isNotEmpty) {
+            final resolvedRole =
+                UserSessionService.normalizeRole(apiModel.role) ??
+                UserSessionService.extractRoleFromToken(token);
+            await _sessionService.saveUserSession(
+              userId: apiModel.id ?? '',
+              email: apiModel.email,
+              name: apiModel.name,
+              token: token,
+              role: resolvedRole,
+            );
+          }
           return Right(apiModel.toEntity());
         }
         return const Right(null);
@@ -229,11 +247,14 @@ class AuthRepository implements IAuthRepository {
 
           // Update session if email or name changed
           if (apiModel.id != null) {
+            final token = (await _sessionService.getToken()) ?? '';
+            final resolvedRole = UserSessionService.extractRoleFromToken(token);
             await _sessionService.saveUserSession(
               userId: apiModel.id!,
               email: apiModel.email,
               name: apiModel.name,
-              token: (await _sessionService.getToken()) ?? '',
+              token: token,
+              role: resolvedRole,
             );
           }
         }

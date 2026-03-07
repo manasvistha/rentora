@@ -4,6 +4,7 @@ import 'package:rentora/common/my_snackbar.dart';
 import 'package:rentora/features/auth/presentation/view_model/auth_view_model.dart';
 import 'package:rentora/features/auth/presentation/state/auth_state.dart';
 import 'package:rentora/features/dashboard/presentation/pages/bottomnavigation_screen.dart';
+import 'package:rentora/core/services/storage/user_session_service.dart';
 
 class LoginPage extends ConsumerStatefulWidget {
   const LoginPage({super.key});
@@ -28,17 +29,23 @@ class _LoginPageState extends ConsumerState<LoginPage> {
 
   @override
   Widget build(BuildContext context) {
-    ref.listen<AuthState>(authViewModelProvider, (previous, next) {
+    ref.listen<AuthState>(authViewModelProvider, (previous, next) async {
       if (next.status == AuthStatus.authenticated) {
         showMySnackBar(
           context: context,
           message: "Login Successful",
           color: Colors.green,
         );
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => const BottomnavigationScreen()),
-        );
+        final sessionService = ref.read(userSessionServiceProvider);
+        final isAdmin = await sessionService.isAdmin();
+        if (isAdmin) {
+          Navigator.pushReplacementNamed(context, '/admin');
+        } else {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (_) => const BottomnavigationScreen()),
+          );
+        }
       } else if (next.status == AuthStatus.error) {
         showMySnackBar(
           context: context,
