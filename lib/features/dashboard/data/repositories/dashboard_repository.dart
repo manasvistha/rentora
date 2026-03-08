@@ -26,6 +26,22 @@ class DashboardRepository implements IDashboardRepository {
   }) : _localDataSource = localDataSource,
        _remoteDataSource = remoteDataSource;
 
+  void _clearBookingCaches() {
+    _localDataSource.cacheMyBookings(const []);
+    _localDataSource.cacheBookingRequests(const []);
+  }
+
+  @override
+  Future<Either<Failure, bool>> createBookingRequest(String propertyId) async {
+    try {
+      await _remoteDataSource.createBookingRequest(propertyId);
+      _clearBookingCaches();
+      return const Right(true);
+    } catch (e) {
+      return Left(ApiFailure(message: e.toString()));
+    }
+  }
+
   @override
   Future<Either<Failure, List<DashboardPropertyEntity>>> getAllProperties({
     bool forceRefresh = false,
@@ -62,6 +78,20 @@ class DashboardRepository implements IDashboardRepository {
     } catch (e) {
       final cached = _localDataSource.getCachedBookingRequests();
       if (cached.isNotEmpty) return Right(cached);
+      return Left(ApiFailure(message: e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, bool>> updateBookingStatus(
+    String bookingId,
+    String status,
+  ) async {
+    try {
+      await _remoteDataSource.updateBookingStatus(bookingId, status);
+      _clearBookingCaches();
+      return const Right(true);
+    } catch (e) {
       return Left(ApiFailure(message: e.toString()));
     }
   }

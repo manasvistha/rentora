@@ -38,6 +38,16 @@ class MessageRepositoryImpl implements MessageRepository {
   }
 
   @override
+  Future<Either<Failure, bool>> deleteConversation(String id) async {
+    try {
+      await _remote.deleteConversation(id);
+      return right(true);
+    } catch (e) {
+      return left(ApiFailure(message: e.toString()));
+    }
+  }
+
+  @override
   Future<Either<Failure, ConversationEntity>> sendMessage({
     required String conversationId,
     required String content,

@@ -5,6 +5,7 @@ import 'package:rentora/core/api/api_client.dart';
 import 'package:rentora/core/api/api_endpoints.dart';
 import 'package:rentora/features/dashboard/domain/entities/dashboard_booking_entity.dart';
 import 'package:rentora/features/dashboard/domain/entities/dashboard_property_entity.dart';
+import 'package:rentora/features/dashboard/domain/usecases/update_booking_status_usecase.dart';
 import 'package:rentora/features/dashboard/presentation/pages/property_detail_screen.dart';
 import 'package:rentora/features/dashboard/presentation/pages/create_property_screen.dart';
 import 'package:rentora/features/dashboard/presentation/providers/dashboard_data_providers.dart';
@@ -238,7 +239,6 @@ class _MyListingsScreenState extends ConsumerState<MyListingsScreen> {
             );
           },
           onEditTap: _editListing,
-          onDeleteTap: _deleteListing,
         ),
         error: (error, _) => _ErrorState(
           message: error.toString(),
@@ -263,6 +263,31 @@ class MyBookingsScreen extends ConsumerWidget {
           items: items,
           emptyMessage: 'You have no bookings yet.',
           onRefresh: () => ref.refresh(myBookingsProvider(true).future),
+          onOpenProperty: (item) {
+            if (item.propertyId.isEmpty) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Property details unavailable.')),
+              );
+              return;
+            }
+
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => PropertyDetailScreen(
+                  property: DashboardPropertyEntity(
+                    id: item.propertyId,
+                    title: item.propertyTitle,
+                    location: item.propertyLocation,
+                    price: item.propertyPrice,
+                    status: item.status,
+                    images: item.propertyImageUrl.isEmpty
+                        ? const []
+                        : [item.propertyImageUrl],
+                  ),
+                ),
+              ),
+            );
+          },
         ),
         error: (error, _) => _ErrorState(
           message: error.toString(),
@@ -274,11 +299,65 @@ class MyBookingsScreen extends ConsumerWidget {
   }
 }
 
-class BookingRequestsScreen extends ConsumerWidget {
+class BookingRequestsScreen extends ConsumerStatefulWidget {
   const BookingRequestsScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<BookingRequestsScreen> createState() =>
+      _BookingRequestsScreenState();
+}
+
+class _BookingRequestsScreenState extends ConsumerState<BookingRequestsScreen> {
+  final Set<String> _processingIds = <String>{};
+  final Map<String, String> _statusOverrides = <String, String>{};
+
+  Future<void> _updateRequestStatus(String bookingId, String status) async {
+    setState(() => _processingIds.add(bookingId));
+
+    final result = await ref
+        .read(updateBookingStatusUseCaseProvider)
+        .execute(bookingId, status);
+
+    if (!mounted) return;
+    setState(() => _processingIds.remove(bookingId));
+
+    result.fold(
+      (failure) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(failure.message),
+            backgroundColor: Colors.red.shade600,
+          ),
+        );
+      },
+      (_) async {
+        setState(() {
+          _statusOverrides[bookingId] = status;
+        });
+
+        final message = status == 'approved'
+            ? 'Booking request approved.'
+            : 'Booking request rejected.';
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(message),
+            backgroundColor: const Color(0xFF2F9E9A),
+          ),
+        );
+
+        await ref.refresh(bookingRequestsProvider(true).future);
+        ref.invalidate(myBookingsProvider(false));
+        ref.invalidate(myBookingsProvider(true));
+        ref.invalidate(allPropertiesProvider(false));
+        ref.invalidate(allPropertiesProvider(true));
+        ref.invalidate(myPropertiesProvider(false));
+        ref.invalidate(myPropertiesProvider(true));
+      },
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final state = ref.watch(bookingRequestsProvider(false));
 
     return _DashboardScaffold(
@@ -287,6 +366,35 @@ class BookingRequestsScreen extends ConsumerWidget {
           items: items,
           emptyMessage: 'No booking requests found.',
           onRefresh: () => ref.refresh(bookingRequestsProvider(true).future),
+          processingIds: _processingIds,
+          statusOverrides: _statusOverrides,
+          onApprove: (bookingId) => _updateRequestStatus(bookingId, 'approved'),
+          onReject: (bookingId) => _updateRequestStatus(bookingId, 'rejected'),
+          onOpenProperty: (item) {
+            if (item.propertyId.isEmpty) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Property details unavailable.')),
+              );
+              return;
+            }
+
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => PropertyDetailScreen(
+                  property: DashboardPropertyEntity(
+                    id: item.propertyId,
+                    title: item.propertyTitle,
+                    location: item.propertyLocation,
+                    price: item.propertyPrice,
+                    status: item.status,
+                    images: item.propertyImageUrl.isEmpty
+                        ? const []
+                        : [item.propertyImageUrl],
+                  ),
+                ),
+              ),
+            );
+          },
         ),
         error: (error, _) => _ErrorState(
           message: error.toString(),
@@ -636,11 +744,21 @@ class _BookingList extends StatelessWidget {
   final List<DashboardBookingEntity> items;
   final String emptyMessage;
   final Future<void> Function() onRefresh;
+  final Set<String> processingIds;
+  final Map<String, String> statusOverrides;
+  final Future<void> Function(String bookingId)? onApprove;
+  final Future<void> Function(String bookingId)? onReject;
+  final void Function(DashboardBookingEntity item)? onOpenProperty;
 
   const _BookingList({
     required this.items,
     required this.emptyMessage,
     required this.onRefresh,
+    this.processingIds = const {},
+    this.statusOverrides = const {},
+    this.onApprove,
+    this.onReject,
+    this.onOpenProperty,
   });
 
   @override
@@ -652,7 +770,22 @@ class _BookingList extends StatelessWidget {
           : ListView.separated(
               itemCount: items.length,
               separatorBuilder: (context, index) => const SizedBox(height: 12),
-              itemBuilder: (context, index) => _BookingCard(item: items[index]),
+              itemBuilder: (context, index) {
+                final item = items[index];
+                return _BookingCard(
+                  item: item,
+                  statusOverride: statusOverrides[item.id],
+                  onTap: onOpenProperty == null
+                      ? null
+                      : () => onOpenProperty!(item),
+                  showOwnerActions: onApprove != null && onReject != null,
+                  processing: processingIds.contains(item.id),
+                  onApprove: onApprove == null
+                      ? null
+                      : () => onApprove!(item.id),
+                  onReject: onReject == null ? null : () => onReject!(item.id),
+                );
+              },
             ),
     );
   }
@@ -660,67 +793,188 @@ class _BookingList extends StatelessWidget {
 
 class _BookingCard extends StatelessWidget {
   final DashboardBookingEntity item;
+  final String? statusOverride;
+  final VoidCallback? onTap;
+  final bool showOwnerActions;
+  final bool processing;
+  final VoidCallback? onApprove;
+  final VoidCallback? onReject;
 
-  const _BookingCard({required this.item});
+  const _BookingCard({
+    required this.item,
+    this.statusOverride,
+    this.onTap,
+    this.showOwnerActions = false,
+    this.processing = false,
+    this.onApprove,
+    this.onReject,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final status = item.status.toLowerCase();
+    final status = (statusOverride ?? item.status).toLowerCase();
     final isPending = status == 'pending';
     final isApproved = status == 'approved';
 
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: Colors.white,
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFFDFECE9)),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 36,
-            height: 36,
-            decoration: BoxDecoration(
-              color: const Color(0xFFEAF7F4),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: const Icon(
-              Icons.event_note_outlined,
-              color: Color(0xFF0F766E),
-              size: 20,
-            ),
+        child: Ink(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: const Color(0xFFDFECE9)),
           ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  item.propertyTitle,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w700,
+          child: Column(
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(10),
+                    child: SizedBox(
+                      width: 76,
+                      height: 76,
+                      child: item.propertyImageUrl.isEmpty
+                          ? Container(
+                              color: const Color(0xFFE8EFED),
+                              child: const Icon(
+                                Icons.home_work_outlined,
+                                color: Color(0xFF7A9390),
+                                size: 24,
+                              ),
+                            )
+                          : Image.network(
+                              item.propertyImageUrl,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) {
+                                return Container(
+                                  color: const Color(0xFFE8EFED),
+                                  child: const Icon(
+                                    Icons.broken_image_outlined,
+                                    color: Color(0xFF7A9390),
+                                    size: 24,
+                                  ),
+                                );
+                              },
+                            ),
+                    ),
                   ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  item.createdAt != null
-                      ? DateFormat('MMM d, y • h:mm a').format(item.createdAt!)
-                      : 'Recently updated',
-                  style: const TextStyle(
-                    fontSize: 11,
-                    color: Color(0xFF6B8487),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          item.propertyTitle,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          item.propertyLocation,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontSize: 11,
+                            color: Color(0xFF5E7A7E),
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Rs. ${item.propertyPrice.toStringAsFixed(0)} / month',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                            color: Color(0xFF0F766E),
+                          ),
+                        ),
+                        if (showOwnerActions &&
+                            (item.requesterName.isNotEmpty ||
+                                item.requesterEmail.isNotEmpty)) ...[
+                          const SizedBox(height: 4),
+                          Text(
+                            item.requesterName.isNotEmpty
+                                ? 'Requested by: ${item.requesterName}'
+                                : item.requesterEmail,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: 11,
+                              color: Color(0xFF6B8487),
+                            ),
+                          ),
+                        ],
+                        const SizedBox(height: 4),
+                        Text(
+                          item.createdAt != null
+                              ? DateFormat(
+                                  'MMM d, y • h:mm a',
+                                ).format(item.createdAt!)
+                              : 'Recently updated',
+                          style: const TextStyle(
+                            fontSize: 11,
+                            color: Color(0xFF6B8487),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
+                  const SizedBox(width: 8),
+                  _StatusBadge(
+                    text: status,
+                    positive: isApproved,
+                    neutral: isPending,
+                  ),
+                ],
+              ),
+              if (showOwnerActions && isPending) ...[
+                const SizedBox(height: 10),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: processing ? null : onReject,
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: const Color(0xFF9B2C2C),
+                          side: const BorderSide(color: Color(0xFFE8B4B4)),
+                        ),
+                        child: const Text('Reject'),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: processing ? null : onApprove,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF2F9E9A),
+                          foregroundColor: Colors.white,
+                        ),
+                        child: processing
+                            ? const SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.white,
+                                ),
+                              )
+                            : const Text('Accept'),
+                      ),
+                    ),
+                  ],
                 ),
               ],
-            ),
+            ],
           ),
-          const SizedBox(width: 8),
-          _StatusBadge(text: status, positive: isApproved, neutral: isPending),
-        ],
+        ),
       ),
     );
   }
@@ -746,8 +1000,8 @@ class _StatusBadge extends StatelessWidget {
       bg = const Color(0xFFE5F7EE);
       fg = const Color(0xFF0F7A43);
     } else if (neutral) {
-      bg = const Color(0xFFFFF5E8);
-      fg = const Color(0xFF9A5A0B);
+      bg = const Color(0xFFE5F7EE);
+      fg = const Color(0xFF0F7A43);
     } else {
       bg = const Color(0xFFF8E8E8);
       fg = const Color(0xFF9B2C2C);

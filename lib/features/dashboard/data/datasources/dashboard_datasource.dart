@@ -7,6 +7,8 @@ abstract interface class IDashboardRemoteDataSource {
   Future<List<DashboardPropertyEntity>> getMyProperties();
   Future<List<DashboardBookingEntity>> getMyBookings();
   Future<List<DashboardBookingEntity>> getBookingRequests();
+  Future<void> createBookingRequest(String propertyId);
+  Future<void> updateBookingStatus(String bookingId, String status);
   Future<DashboardSnapshotEntity> getDashboardSnapshot();
 }
 

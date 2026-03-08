@@ -21,6 +21,13 @@ abstract class IDashboardRepository {
     bool forceRefresh = false,
   });
 
+  Future<Either<Failure, bool>> createBookingRequest(String propertyId);
+
+  Future<Either<Failure, bool>> updateBookingStatus(
+    String bookingId,
+    String status,
+  );
+
   Future<Either<Failure, DashboardSnapshotEntity>> getDashboardSnapshot({
     bool forceRefresh = false,
   });

@@ -27,6 +27,10 @@ class MessageRemoteDataSource {
     return (res.data as Map).cast<String, dynamic>();
   }
 
+  Future<void> deleteConversation(String id) async {
+    await _dio.delete(ApiEndpoints.conversationDelete(id));
+  }
+
   Future<Map<String, dynamic>> sendMessage({
     required String conversationId,
     required String content,

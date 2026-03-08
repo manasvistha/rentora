@@ -9,6 +9,7 @@ import 'dart:convert';
 import 'package:intl/intl.dart';
 import 'package:rentora/features/dashboard/presentation/pages/create_property_screen.dart';
 import 'package:rentora/features/dashboard/domain/entities/dashboard_property_entity.dart';
+import 'package:rentora/features/dashboard/domain/usecases/create_booking_request_usecase.dart';
 import 'package:rentora/features/dashboard/presentation/widgets/property_location_preview.dart';
 import 'package:rentora/features/message/domain/usecases/create_conversation_usecase.dart';
 import 'package:rentora/features/message/presentation/pages/chat_screen.dart';
@@ -36,6 +37,8 @@ class _PropertyDetailScreenState extends ConsumerState<PropertyDetailScreen> {
   PropertyCoordinates? _userCoordinates;
   bool _locatingUser = false;
   String? _locationError;
+  bool _bookingSubmitting = false;
+  bool _bookingRequestSent = false;
 
   PageController get _pageController {
     _imagePageController ??= PageController(initialPage: _currentImageIndex);
@@ -105,12 +108,51 @@ class _PropertyDetailScreenState extends ConsumerState<PropertyDetailScreen> {
         _ownerEmail = ownerEmail;
         _loading = false;
       });
+
+      if (!_isOwner && currentUserId != null && currentUserId.isNotEmpty) {
+        _loadMyBookingStatus();
+      }
     } catch (e) {
       if (!mounted) return;
       setState(() {
         _error = 'Failed to fetch full property details.';
         _loading = false;
       });
+    }
+  }
+
+  Future<void> _loadMyBookingStatus() async {
+    try {
+      final client = ref.read(apiClientProvider);
+      final response = await client.get(ApiEndpoints.bookingMy);
+
+      final raw = response.data;
+      final list = raw is List
+          ? raw
+          : (raw is Map<String, dynamic> && raw['data'] is List
+                ? raw['data'] as List
+                : const <dynamic>[]);
+
+      bool sent = false;
+      for (final item in list) {
+        if (item is! Map) continue;
+        final map = item.cast<String, dynamic>();
+        final property = map['property'];
+        final propertyId = property is Map
+            ? (property['_id'] ?? property['id'] ?? '').toString()
+            : property?.toString() ?? '';
+        final bookingStatus = (map['status'] ?? '').toString().toLowerCase();
+        if (propertyId == widget.property.id &&
+            (bookingStatus == 'pending' || bookingStatus == 'approved')) {
+          sent = true;
+          break;
+        }
+      }
+
+      if (!mounted) return;
+      setState(() => _bookingRequestSent = sent);
+    } catch (_) {
+      // Keep booking button usable even if status lookup fails.
     }
   }
 
@@ -341,6 +383,42 @@ class _PropertyDetailScreenState extends ConsumerState<PropertyDetailScreen> {
         context,
       ).showSnackBar(SnackBar(content: Text('Failed to start chat: $e')));
     }
+  }
+
+  Future<void> _requestBooking() async {
+    if (_bookingSubmitting) return;
+    setState(() => _bookingSubmitting = true);
+
+    final result = await ref
+        .read(createBookingRequestUseCaseProvider)
+        .execute(widget.property.id);
+
+    if (!mounted) return;
+    setState(() => _bookingSubmitting = false);
+
+    result.fold(
+      (failure) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(failure.message),
+            backgroundColor: Colors.red.shade600,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      },
+      (_) {
+        setState(() => _bookingRequestSent = true);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Booking request sent. Owner will be notified and must accept first.',
+            ),
+            backgroundColor: Colors.green,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      },
+    );
   }
 
   @override
@@ -886,6 +964,59 @@ class _PropertyDetailScreenState extends ConsumerState<PropertyDetailScreen> {
                                   color: Color(0xFF5E7A7E),
                                 ),
                               ),
+                              if (!_isOwner) ...[
+                                const SizedBox(height: 14),
+                                SizedBox(
+                                  width: double.infinity,
+                                  child: ElevatedButton.icon(
+                                    onPressed:
+                                        (isAvailable &&
+                                            !_bookingSubmitting &&
+                                            !_bookingRequestSent)
+                                        ? _requestBooking
+                                        : null,
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: _bookingRequestSent
+                                          ? Colors.green
+                                          : const Color(0xFF2F9E9A),
+                                      foregroundColor: Colors.white,
+                                      disabledBackgroundColor: const Color(
+                                        0xFF2F9E9A,
+                                      ).withValues(alpha: 0.75),
+                                      padding: const EdgeInsets.symmetric(
+                                        vertical: 12,
+                                      ),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                    ),
+                                    icon: _bookingSubmitting
+                                        ? const SizedBox(
+                                            width: 16,
+                                            height: 16,
+                                            child: CircularProgressIndicator(
+                                              strokeWidth: 2,
+                                              color: Colors.white,
+                                            ),
+                                          )
+                                        : Icon(
+                                            _bookingRequestSent
+                                                ? Icons.check_circle_outline
+                                                : Icons.bookmark_add_outlined,
+                                          ),
+                                    label: Text(
+                                      _bookingRequestSent
+                                          ? 'Request Sent'
+                                          : (isAvailable
+                                                ? 'Request Booking'
+                                                : 'Not Available for Booking'),
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ],
                           ),
                         ),

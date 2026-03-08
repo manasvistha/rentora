@@ -97,6 +97,7 @@ class ApiEndpoints {
   static const String conversationCreate = 'conversation';
   static String conversationSendMessage(String id) =>
       'conversation/$id/message';
+  static String conversationDelete(String id) => 'conversation/$id';
   static String conversationByBooking(String bookingId) =>
       'conversation/booking/$bookingId';
   static String conversationSendBookingMessage(String bookingId) =>

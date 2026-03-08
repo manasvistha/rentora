@@ -16,11 +16,6 @@ class ConversationsScreen extends ConsumerStatefulWidget {
 
 class _ConversationsScreenState extends ConsumerState<ConversationsScreen> {
   Timer? _poll;
-  static const _dashboardGradient = LinearGradient(
-    begin: Alignment.topCenter,
-    end: Alignment.bottomCenter,
-    colors: [Color(0xFF2F9E9A), Color(0xFF6CCBC7), Color(0xFFD8F3F2)],
-  );
 
   @override
   void initState() {
@@ -42,61 +37,121 @@ class _ConversationsScreenState extends ConsumerState<ConversationsScreen> {
     final async = ref.watch(conversationsProvider);
 
     return SafeArea(
-      child: Scaffold(
-        backgroundColor: Colors.transparent,
-        appBar: AppBar(
-          title: const Text('Conversations'),
-          backgroundColor: Colors.transparent,
-          surfaceTintColor: Colors.transparent,
-          elevation: 0,
-          foregroundColor: Colors.white,
-        ),
-        body: Container(
-          decoration: const BoxDecoration(gradient: _dashboardGradient),
-          child: async.when(
-            loading: () => const Center(
-              child: CircularProgressIndicator(color: Colors.white),
-            ),
-            error: (e, st) => Center(
-              child: Text(
-                e.toString(),
-                style: const TextStyle(color: Colors.white),
+      child: RefreshIndicator(
+        onRefresh: () async => ref.invalidate(conversationsProvider),
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+          children: [
+            const Text(
+              'Messages',
+              style: TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.w800,
+                color: Colors.white,
               ),
             ),
-            data: (either) => either.fold(
-              (failure) => Center(
-                child: Text(
-                  failure.message,
-                  style: const TextStyle(color: Colors.white),
+            const SizedBox(height: 8),
+            const Text(
+              'Your recent conversations with owners and tenants.',
+              style: TextStyle(color: Colors.white70, fontSize: 14),
+            ),
+            const SizedBox(height: 18),
+            async.when(
+              loading: () => const Center(
+                child: Padding(
+                  padding: EdgeInsets.symmetric(vertical: 40),
+                  child: CircularProgressIndicator(color: Colors.white),
                 ),
               ),
-              (list) {
-                if (list.isEmpty) {
-                  return const Center(
-                    child: Text(
-                      'No conversations yet',
-                      style: TextStyle(color: Colors.white70),
-                    ),
+              error: (e, st) => _MessageErrorCard(
+                message: e.toString(),
+                onRetry: () => ref.invalidate(conversationsProvider),
+              ),
+              data: (either) => either.fold(
+                (failure) => _MessageErrorCard(
+                  message: failure.message,
+                  onRetry: () => ref.invalidate(conversationsProvider),
+                ),
+                (list) {
+                  if (list.isEmpty) {
+                    return const _MessageEmptyCard(
+                      message:
+                          'No conversations yet. Start by opening a property and chatting with the owner.',
+                    );
+                  }
+
+                  return Column(
+                    children: list
+                        .map(
+                          (item) => Padding(
+                            padding: const EdgeInsets.only(bottom: 10),
+                            child: _ConversationTile(item: item),
+                          ),
+                        )
+                        .toList(),
                   );
-                }
-                return RefreshIndicator(
-                  color: const Color(0xFF2F9E9A),
-                  backgroundColor: Colors.white,
-                  onRefresh: () async => ref.invalidate(conversationsProvider),
-                  child: ListView.separated(
-                    padding: const EdgeInsets.all(12),
-                    itemCount: list.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: 8),
-                    itemBuilder: (context, index) {
-                      final item = list[index];
-                      return _ConversationTile(item: item);
-                    },
-                  ),
-                );
-              },
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _MessageErrorCard extends StatelessWidget {
+  final String message;
+  final VoidCallback onRetry;
+
+  const _MessageErrorCard({required this.message, required this.onRetry});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFF1F1),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFFFFD5D5)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            message,
+            style: const TextStyle(
+              color: Color(0xFF9B2C2C),
+              fontWeight: FontWeight.w600,
             ),
           ),
-        ),
+          const SizedBox(height: 8),
+          TextButton(onPressed: onRetry, child: const Text('Retry')),
+        ],
+      ),
+    );
+  }
+}
+
+class _MessageEmptyCard extends StatelessWidget {
+  final String message;
+
+  const _MessageEmptyCard({required this.message});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFFDFECE9)),
+      ),
+      child: Text(
+        message,
+        style: const TextStyle(color: Color(0xFF5E7A7E), fontSize: 13),
       ),
     );
   }
@@ -185,6 +240,7 @@ class _ConversationTile extends ConsumerWidget {
               name,
               style: const TextStyle(
                 color: Color(0xFF0F3D33),
+                fontSize: 15,
                 fontWeight: FontWeight.w700,
               ),
             ),
@@ -192,7 +248,7 @@ class _ConversationTile extends ConsumerWidget {
               last,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(color: Color(0xFF3E6B5D)),
+              style: const TextStyle(color: Color(0xFF3E6B5D), fontSize: 13),
             ),
             trailing: Text(
               time == null
