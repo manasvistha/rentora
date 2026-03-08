@@ -282,8 +282,7 @@ class _LocationPickerCardState extends State<LocationPickerCard> {
             ),
             children: [
               TileLayer(
-                urlTemplate:
-                    'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+                urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                 userAgentPackageName: 'com.rentora.app',
               ),
               if (pin != null)

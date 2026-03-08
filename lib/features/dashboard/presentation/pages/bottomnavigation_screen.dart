@@ -45,18 +45,22 @@ class _BottomnavigationScreenState extends State<BottomnavigationScreen> {
       ),
 
       // Floating Action Button for Add Property
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          Navigator.of(context).push(
-            MaterialPageRoute(builder: (_) => const CreatePropertyScreen()),
-          );
-        },
-        backgroundColor: const Color(0xFF2F9E9A),
-        elevation: 4,
-        shape: const CircleBorder(),
-        child: const Icon(Icons.add, color: Colors.white, size: 28),
+      floatingActionButton: SizedBox(
+        width: 85,
+        height: 85,
+        child: FloatingActionButton(
+          onPressed: () {
+            Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const CreatePropertyScreen()),
+            );
+          },
+          backgroundColor: const Color(0xFF2F9E9A),
+          elevation: 4,
+          shape: const CircleBorder(),
+          child: const Icon(Icons.add, color: Colors.white, size: 30),
+        ),
       ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+      floatingActionButtonLocation: const _FixedCenterDockedFabLocation(),
 
       bottomNavigationBar: BottomAppBar(
         shape: const CircularNotchedRectangle(),
@@ -64,44 +68,70 @@ class _BottomnavigationScreenState extends State<BottomnavigationScreen> {
         color: Colors.white,
         elevation: 8,
         child: SizedBox(
-          height: 60,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              _NavBarItem(
-                icon: Icons.explore_outlined,
-                activeIcon: Icons.explore,
-                label: 'Explore',
-                isSelected: _selectedIndex == 0,
-                onTap: () => setState(() => _selectedIndex = 0),
-              ),
-              _NavBarItem(
-                icon: Icons.favorite_border,
-                activeIcon: Icons.favorite,
-                label: 'Favorites',
-                isSelected: _selectedIndex == 1,
-                onTap: () => setState(() => _selectedIndex = 1),
-              ),
-              const SizedBox(width: 48), // Space for the FAB
-              _NavBarItem(
-                icon: Icons.message_outlined,
-                activeIcon: Icons.message,
-                label: 'Message',
-                isSelected: _selectedIndex == 2,
-                onTap: () => setState(() => _selectedIndex = 2),
-              ),
-              _NavBarItem(
-                icon: Icons.person_outline,
-                activeIcon: Icons.person,
-                label: 'Profile',
-                isSelected: _selectedIndex == 3,
-                onTap: () => setState(() => _selectedIndex = 3),
-              ),
-            ],
+          height: 64,
+          child: Padding(
+            padding: const EdgeInsets.only(top: 6, bottom: 0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                _NavBarItem(
+                  icon: Icons.explore_outlined,
+                  activeIcon: Icons.explore,
+                  label: 'Explore',
+                  isSelected: _selectedIndex == 0,
+                  onTap: () => setState(() => _selectedIndex = 0),
+                ),
+                _NavBarItem(
+                  icon: Icons.favorite_border,
+                  activeIcon: Icons.favorite,
+                  label: 'Favorites',
+                  isSelected: _selectedIndex == 1,
+                  onTap: () => setState(() => _selectedIndex = 1),
+                ),
+                const SizedBox(width: 48), // Space for the FAB
+                _NavBarItem(
+                  icon: Icons.message_outlined,
+                  activeIcon: Icons.message,
+                  label: 'Message',
+                  isSelected: _selectedIndex == 2,
+                  onTap: () => setState(() => _selectedIndex = 2),
+                ),
+                _NavBarItem(
+                  icon: Icons.person_outline,
+                  activeIcon: Icons.person,
+                  label: 'Profile',
+                  isSelected: _selectedIndex == 3,
+                  onTap: () => setState(() => _selectedIndex = 3),
+                ),
+              ],
+            ),
           ),
         ),
       ),
     );
+  }
+}
+
+class _FixedCenterDockedFabLocation extends FloatingActionButtonLocation {
+  const _FixedCenterDockedFabLocation();
+
+  static const double _bottomBarHeight = 64;
+
+  @override
+  Offset getOffset(ScaffoldPrelayoutGeometry scaffoldGeometry) {
+    final fabWidth = scaffoldGeometry.floatingActionButtonSize.width;
+    final fabHeight = scaffoldGeometry.floatingActionButtonSize.height;
+    final fabX = (scaffoldGeometry.scaffoldSize.width - fabWidth) / 2;
+
+    // Keep FAB anchored to the bottom app bar position, independent of snackbars.
+    final safeBottom = scaffoldGeometry.minViewPadding.bottom;
+    final fabY =
+        scaffoldGeometry.scaffoldSize.height -
+        safeBottom -
+        _bottomBarHeight -
+        (fabHeight / 2);
+
+    return Offset(fabX, fabY);
   }
 }
 

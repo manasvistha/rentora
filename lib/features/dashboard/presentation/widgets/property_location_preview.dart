@@ -138,8 +138,7 @@ class _PropertyLocationPreviewState extends State<PropertyLocationPreview> {
             ),
             children: [
               TileLayer(
-                urlTemplate:
-                    'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+                urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                 userAgentPackageName: 'com.rentora.app',
               ),
               MarkerLayer(

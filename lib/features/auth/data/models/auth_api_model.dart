@@ -39,13 +39,19 @@ class AuthApiModel {
   }
 
   Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'name': name,
-      'email': email,
-      'password': password,
-      'profilePicture': profilePicture,
-    };
+    final json = <String, dynamic>{'name': name, 'email': email};
+
+    if (id != null && id!.isNotEmpty) {
+      json['id'] = id;
+    }
+    if (password != null && password!.isNotEmpty) {
+      json['password'] = password;
+    }
+    if (profilePicture != null && profilePicture!.isNotEmpty) {
+      json['profilePicture'] = profilePicture;
+    }
+
+    return json;
   }
 
   AuthEntity toEntity() {

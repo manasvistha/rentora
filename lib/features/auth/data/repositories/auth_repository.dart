@@ -43,6 +43,15 @@ class AuthRepository implements IAuthRepository {
        _networkInfo = networkInfo,
        _sessionService = sessionService;
 
+  String _messageFromDioResponse(dynamic data, String fallback) {
+    if (data is Map<String, dynamic>) {
+      final message = data['message'];
+      if (message is String && message.isNotEmpty) return message;
+    }
+    if (data is String && data.isNotEmpty) return data;
+    return fallback;
+  }
+
   @override
   Future<Either<Failure, bool>> signup(
     AuthEntity user, {
@@ -219,7 +228,10 @@ class AuthRepository implements IAuthRepository {
       } on DioException catch (e) {
         return Left(
           ApiFailure(
-            message: e.response?.data['message'] ?? 'Photo upload failed',
+            message: _messageFromDioResponse(
+              e.response?.data,
+              'Photo upload failed',
+            ),
             statusCode: e.response?.statusCode,
           ),
         );
@@ -263,7 +275,10 @@ class AuthRepository implements IAuthRepository {
       } on DioException catch (e) {
         return Left(
           ApiFailure(
-            message: e.response?.data['message'] ?? 'Failed to update user',
+            message: _messageFromDioResponse(
+              e.response?.data,
+              'Failed to update user',
+            ),
             statusCode: e.response?.statusCode,
           ),
         );

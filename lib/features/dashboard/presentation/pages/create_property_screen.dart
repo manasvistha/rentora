@@ -459,7 +459,7 @@ class _CreatePropertyScreenState extends ConsumerState<CreatePropertyScreen> {
                         onPressed: _confirmDelete,
                         icon: const Icon(
                           Icons.delete_forever,
-                          color: Colors.white,
+                          color: Color.fromARGB(255, 222, 16, 16),
                         ),
                       ),
                   ],
@@ -942,8 +942,10 @@ class _CreatePropertyScreenState extends ConsumerState<CreatePropertyScreen> {
                                       color: Colors.white,
                                     ),
                                   )
-                                : const Text(
-                                    'Create Property',
+                                : Text(
+                                    _isEdit
+                                        ? 'Update Property'
+                                        : 'Create Property',
                                     style: TextStyle(
                                       fontSize: 16,
                                       fontWeight: FontWeight.w700,

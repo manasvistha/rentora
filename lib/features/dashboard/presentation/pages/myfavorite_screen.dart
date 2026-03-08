@@ -61,9 +61,13 @@ class _MyFavoriteScreenState extends ConsumerState<MyFavoriteScreen> {
     try {
       await client.delete(ApiEndpoints.favoriteByProperty(propertyId));
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Removed from favorites.')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Removed from favorites.'),
+          behavior: SnackBarBehavior.floating,
+          margin: EdgeInsets.fromLTRB(16, 0, 16, 96),
+        ),
+      );
       await _loadFavorites();
     } catch (e) {
       if (!mounted) return;
