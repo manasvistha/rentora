@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:rentora/core/localization/app_localizations.dart';
 import 'package:rentora/features/dashboard/presentation/pages/dashboard_lists_screen.dart';
 
 class SearchScreen extends StatelessWidget {
@@ -26,6 +27,25 @@ class SearchScreen extends StatelessWidget {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 10,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        context.tr('search'),
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFF2F9E9A),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
                     _PrimaryAction(
                       label: 'My Listing',
                       icon: Icons.add,

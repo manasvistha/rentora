@@ -88,7 +88,7 @@ class _MyFavoriteScreenState extends ConsumerState<MyFavoriteScreen> {
             const Text(
               'My Favorites',
               style: TextStyle(
-                fontSize: 20,
+                fontSize: 24,
                 fontWeight: FontWeight.w800,
                 color: Colors.white,
               ),
@@ -96,7 +96,7 @@ class _MyFavoriteScreenState extends ConsumerState<MyFavoriteScreen> {
             const SizedBox(height: 6),
             const Text(
               'Saved homes you like, just like on the web dashboard.',
-              style: TextStyle(color: Colors.white70, fontSize: 13),
+              style: TextStyle(color: Colors.white70, fontSize: 15),
             ),
             const SizedBox(height: 16),
             if (_error != null)

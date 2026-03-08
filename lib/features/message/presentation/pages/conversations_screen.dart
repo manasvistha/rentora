@@ -16,6 +16,11 @@ class ConversationsScreen extends ConsumerStatefulWidget {
 
 class _ConversationsScreenState extends ConsumerState<ConversationsScreen> {
   Timer? _poll;
+  static const _dashboardGradient = LinearGradient(
+    begin: Alignment.topCenter,
+    end: Alignment.bottomCenter,
+    colors: [Color(0xFF2F9E9A), Color(0xFF6CCBC7), Color(0xFFD8F3F2)],
+  );
 
   @override
   void initState() {
@@ -37,121 +42,64 @@ class _ConversationsScreenState extends ConsumerState<ConversationsScreen> {
     final async = ref.watch(conversationsProvider);
 
     return SafeArea(
-      child: RefreshIndicator(
-        onRefresh: () async => ref.invalidate(conversationsProvider),
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
-          children: [
-            const Text(
-              'Messages',
-              style: TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.w800,
-                color: Colors.white,
-              ),
-            ),
-            const SizedBox(height: 8),
-            const Text(
-              'Your recent conversations with owners and tenants.',
-              style: TextStyle(color: Colors.white70, fontSize: 14),
-            ),
-            const SizedBox(height: 18),
-            async.when(
-              loading: () => const Center(
-                child: Padding(
-                  padding: EdgeInsets.symmetric(vertical: 40),
-                  child: CircularProgressIndicator(color: Colors.white),
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        body: Container(
+          decoration: const BoxDecoration(gradient: _dashboardGradient),
+          child: RefreshIndicator(
+            color: const Color(0xFF2F9E9A),
+            backgroundColor: Colors.white,
+            onRefresh: () async => ref.invalidate(conversationsProvider),
+            child: ListView(
+              padding: const EdgeInsets.fromLTRB(12, 16, 12, 24),
+              children: [
+                const Text(
+                  'Conversations',
+                  style: TextStyle(
+                    fontSize: 30,
+                    fontWeight: FontWeight.w800,
+                    color: Colors.white,
+                  ),
                 ),
-              ),
-              error: (e, st) => _MessageErrorCard(
-                message: e.toString(),
-                onRetry: () => ref.invalidate(conversationsProvider),
-              ),
-              data: (either) => either.fold(
-                (failure) => _MessageErrorCard(
-                  message: failure.message,
-                  onRetry: () => ref.invalidate(conversationsProvider),
+                const SizedBox(height: 6),
+                const Text(
+                  'Chats with owners and renters.',
+                  style: TextStyle(color: Colors.white70, fontSize: 13),
                 ),
-                (list) {
-                  if (list.isEmpty) {
-                    return const _MessageEmptyCard(
-                      message:
-                          'No conversations yet. Start by opening a property and chatting with the owner.',
-                    );
-                  }
-
-                  return Column(
-                    children: list
-                        .map(
-                          (item) => Padding(
-                            padding: const EdgeInsets.only(bottom: 10),
-                            child: _ConversationTile(item: item),
-                          ),
-                        )
-                        .toList(),
-                  );
-                },
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _MessageErrorCard extends StatelessWidget {
-  final String message;
-  final VoidCallback onRetry;
-
-  const _MessageErrorCard({required this.message, required this.onRetry});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: const Color(0xFFFFF1F1),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFFFFD5D5)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            message,
-            style: const TextStyle(
-              color: Color(0xFF9B2C2C),
-              fontWeight: FontWeight.w600,
+                const SizedBox(height: 16),
+                async.when(
+                  loading: () => const Center(
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(vertical: 40),
+                      child: CircularProgressIndicator(color: Colors.white),
+                    ),
+                  ),
+                  error: (e, st) => _MessageStateCard(message: e.toString()),
+                  data: (either) => either.fold(
+                    (failure) => _MessageStateCard(message: failure.message),
+                    (list) {
+                      if (list.isEmpty) {
+                        return const _MessageStateCard(
+                          message: 'No conversations yet',
+                        );
+                      }
+                      return Column(
+                        children: list
+                            .map(
+                              (item) => Padding(
+                                padding: const EdgeInsets.only(bottom: 12),
+                                child: _ConversationTile(item: item),
+                              ),
+                            )
+                            .toList(),
+                      );
+                    },
+                  ),
+                ),
+              ],
             ),
           ),
-          const SizedBox(height: 8),
-          TextButton(onPressed: onRetry, child: const Text('Retry')),
-        ],
-      ),
-    );
-  }
-}
-
-class _MessageEmptyCard extends StatelessWidget {
-  final String message;
-
-  const _MessageEmptyCard({required this.message});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFFDFECE9)),
-      ),
-      child: Text(
-        message,
-        style: const TextStyle(color: Color(0xFF5E7A7E), fontSize: 13),
+        ),
       ),
     );
   }
@@ -183,7 +131,7 @@ class _ConversationTile extends ConsumerWidget {
 
   Widget _avatar({required String name, String? imageUrl}) {
     return CircleAvatar(
-      radius: 24,
+      radius: 28,
       backgroundColor: const Color(0xFFD1FAE5),
       foregroundImage: (imageUrl != null && imageUrl.trim().isNotEmpty)
           ? NetworkImage(imageUrl)
@@ -215,50 +163,100 @@ class _ConversationTile extends ConsumerWidget {
             item.lastMessageTime ??
             (item.messages.isNotEmpty ? item.messages.last.timestamp : null);
 
-        return Card(
-          elevation: 0,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-            side: const BorderSide(color: Color(0xFFBFE8D8)),
-          ),
-          color: const Color(0xFFFCFFFD),
-          child: ListTile(
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 12,
-              vertical: 8,
-            ),
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => ChatScreen(conversationId: item.id),
-                ),
-              );
-            },
-            leading: _avatar(name: name, imageUrl: other.avatarUrl),
-            title: Text(
-              name,
-              style: const TextStyle(
-                color: Color(0xFF0F3D33),
-                fontSize: 15,
-                fontWeight: FontWeight.w700,
+        return InkWell(
+          borderRadius: BorderRadius.circular(16),
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => ChatScreen(conversationId: item.id),
               ),
+            );
+          },
+          child: Container(
+            padding: const EdgeInsets.fromLTRB(12, 18, 12, 18),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.06),
+                  blurRadius: 14,
+                  offset: const Offset(0, 8),
+                ),
+              ],
             ),
-            subtitle: Text(
-              last,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(color: Color(0xFF3E6B5D), fontSize: 13),
-            ),
-            trailing: Text(
-              time == null
-                  ? ''
-                  : '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}',
-              style: const TextStyle(fontSize: 12, color: Color(0xFF3E6B5D)),
+            child: Row(
+              children: [
+                _avatar(name: name, imageUrl: other.avatarUrl),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w800,
+                          color: Color(0xFF103033),
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        last,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: Color(0xFF5E7A7E),
+                          fontSize: 13,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  time == null
+                      ? ''
+                      : '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: Color(0xFF3E6B5D),
+                  ),
+                ),
+              ],
             ),
           ),
         );
       },
+    );
+  }
+}
+
+class _MessageStateCard extends StatelessWidget {
+  final String message;
+
+  const _MessageStateCard({required this.message});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.92),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Text(
+        message,
+        style: const TextStyle(
+          color: Color(0xFF23474A),
+          fontWeight: FontWeight.w600,
+        ),
+      ),
     );
   }
 }

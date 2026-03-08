@@ -46,6 +46,16 @@ class AdminRepositoryImpl implements AdminRepository {
   }
 
   @override
+  Future<Either<Failure, List<dynamic>>> getBookings() async {
+    try {
+      final data = await _remote.getBookings();
+      return right(data);
+    } catch (e) {
+      return left(ApiFailure(message: e.toString()));
+    }
+  }
+
+  @override
   Future<Either<Failure, void>> deleteUser(String id) async {
     try {
       await _remote.deleteUser(id);

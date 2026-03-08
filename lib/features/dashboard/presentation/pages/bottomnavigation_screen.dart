@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:rentora/core/localization/app_localizations.dart';
 import 'package:rentora/features/dashboard/presentation/pages/create_property_screen.dart';
 import 'package:rentora/features/dashboard/presentation/pages/profile_screen.dart';
 import 'explore_screen.dart';
@@ -77,14 +78,14 @@ class _BottomnavigationScreenState extends State<BottomnavigationScreen> {
                 _NavBarItem(
                   icon: Icons.explore_outlined,
                   activeIcon: Icons.explore,
-                  label: 'Explore',
+                  label: context.tr('discover'),
                   isSelected: _selectedIndex == 0,
                   onTap: () => setState(() => _selectedIndex = 0),
                 ),
                 _NavBarItem(
                   icon: Icons.favorite_border,
                   activeIcon: Icons.favorite,
-                  label: 'Favorites',
+                  label: context.tr('matches'),
                   isSelected: _selectedIndex == 1,
                   onTap: () => setState(() => _selectedIndex = 1),
                 ),
@@ -92,14 +93,14 @@ class _BottomnavigationScreenState extends State<BottomnavigationScreen> {
                 _NavBarItem(
                   icon: Icons.message_outlined,
                   activeIcon: Icons.message,
-                  label: 'Message',
+                  label: context.tr('messages'),
                   isSelected: _selectedIndex == 2,
                   onTap: () => setState(() => _selectedIndex = 2),
                 ),
                 _NavBarItem(
                   icon: Icons.person_outline,
                   activeIcon: Icons.person,
-                  label: 'Profile',
+                  label: context.tr('profile'),
                   isSelected: _selectedIndex == 3,
                   onTap: () => setState(() => _selectedIndex = 3),
                 ),

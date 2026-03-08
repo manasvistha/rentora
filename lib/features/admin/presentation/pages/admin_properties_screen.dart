@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:rentora/core/api/api_endpoints.dart';
+import 'package:rentora/features/dashboard/domain/entities/dashboard_property_entity.dart';
+import 'package:rentora/features/dashboard/presentation/pages/property_detail_screen.dart';
 import '../providers/admin_providers.dart';
 
 class AdminPropertiesScreen extends ConsumerWidget {
@@ -13,7 +15,7 @@ class AdminPropertiesScreen extends ConsumerWidget {
     final async = ref.watch(adminPropertiesProvider);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: const Color(0xFFE8F8F5),
       appBar: AppBar(
         title: const Text('Admin Properties'),
         backgroundColor: Colors.white,
@@ -36,7 +38,10 @@ class AdminPropertiesScreen extends ConsumerWidget {
                 itemCount: items.length,
                 separatorBuilder: (_, __) => const SizedBox(height: 10),
                 itemBuilder: (context, index) {
-                  final item = items[index] as Map<String, dynamic>;
+                  final raw = items[index];
+                  final item = raw is Map<String, dynamic>
+                      ? raw
+                      : <String, dynamic>{};
                   final id = (item['id'] ?? item['_id'] ?? '').toString();
                   final title = (item['title'] ?? 'Untitled').toString();
                   final location = (item['location'] ?? 'Unknown location')
@@ -60,7 +65,28 @@ class AdminPropertiesScreen extends ConsumerWidget {
                     ),
                     child: InkWell(
                       borderRadius: BorderRadius.circular(14),
-                      onTap: () {},
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => PropertyDetailScreen(
+                              property: DashboardPropertyEntity(
+                                id: id,
+                                title: title,
+                                location: location,
+                                price: price is num
+                                    ? price.toDouble()
+                                    : double.tryParse(
+                                            price?.toString() ?? '',
+                                          ) ??
+                                          0,
+                                status: status,
+                                images: images,
+                              ),
+                            ),
+                          ),
+                        );
+                      },
                       child: Padding(
                         padding: const EdgeInsets.all(12),
                         child: Column(
@@ -298,8 +324,15 @@ class AdminPropertiesScreen extends ConsumerWidget {
   String? _resolveImage(String? raw) {
     if (raw == null || raw.trim().isEmpty) return null;
     final value = raw.trim();
-    if (value.startsWith('http://') || value.startsWith('https://'))
-      return value;
+    if (value.startsWith('http://') || value.startsWith('https://')) {
+      final uri = Uri.tryParse(value);
+      if (uri == null) return value;
+      const localHosts = {'localhost', '127.0.0.1', '0.0.0.0'};
+      if (!localHosts.contains(uri.host)) return value;
+
+      final apiUri = Uri.parse(ApiEndpoints.baseUrl);
+      return uri.replace(host: apiUri.host, port: apiUri.port).toString();
+    }
     final host = ApiEndpoints.baseUrl.replaceFirst(RegExp(r'/api/?$'), '');
     if (value.startsWith('/')) return '$host$value';
     return '$host/public/property-images/$value';

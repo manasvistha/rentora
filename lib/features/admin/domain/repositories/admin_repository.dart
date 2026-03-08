@@ -8,6 +8,7 @@ abstract class AdminRepository {
     int page = 1,
     int limit = 10,
   });
+  Future<Either<Failure, List<dynamic>>> getBookings();
   Future<Either<Failure, void>> deleteUser(String id);
   Future<Either<Failure, void>> promoteUser(String id);
   Future<Either<Failure, List<dynamic>>> getProperties();

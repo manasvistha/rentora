@@ -3,10 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:rentora/core/api/api_endpoints.dart';
+import 'package:rentora/core/localization/app_localizations.dart';
 import 'package:rentora/features/auth/presentation/view_model/auth_view_model.dart';
 import 'package:rentora/features/dashboard/presentation/pages/edit_profile_screen.dart';
 import 'package:rentora/features/dashboard/presentation/pages/about_screen.dart';
 import 'package:rentora/features/dashboard/presentation/pages/bottomnavigation_screen.dart';
+import 'package:rentora/features/dashboard/presentation/pages/language_settings_screen.dart';
 
 final profileImageProvider = NotifierProvider<ProfileImageNotifier, File?>(
   ProfileImageNotifier.new,
@@ -207,7 +209,7 @@ class ProfileScreen extends ConsumerWidget {
                       ),
                     ),
                     Text(
-                      'My Profile',
+                      context.tr('myProfile'),
                       style: const TextStyle(
                         fontSize: 26,
                         fontWeight: FontWeight.bold,
@@ -221,8 +223,8 @@ class ProfileScreen extends ConsumerWidget {
               const SizedBox(height: 10),
 
               // ── Sub-heading ──
-              const Text(
-                'View and manage your account information',
+              Text(
+                context.tr('manageAccount'),
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
@@ -409,7 +411,7 @@ class ProfileScreen extends ConsumerWidget {
               Padding(
                 padding: const EdgeInsets.only(left: 4, bottom: 10),
                 child: Text(
-                  'Account',
+                  context.tr('account'),
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w700,
@@ -422,7 +424,7 @@ class ProfileScreen extends ConsumerWidget {
               // ── Edit Profile ──
               _MenuTile(
                 icon: Icons.edit_outlined,
-                title: 'Edit Profile',
+                title: context.tr('editProfile'),
                 subtitle: 'Update your name, email, password and photo',
                 onTap: () => Navigator.push(
                   context,
@@ -435,7 +437,7 @@ class ProfileScreen extends ConsumerWidget {
               // ── About Us ──
               _MenuTile(
                 icon: Icons.info_outline,
-                title: 'About Us',
+                title: context.tr('aboutUs'),
                 subtitle: 'Learn more about Rentora',
                 onTap: () => Navigator.push(
                   context,
@@ -445,10 +447,24 @@ class ProfileScreen extends ConsumerWidget {
 
               const SizedBox(height: 10),
 
+              _MenuTile(
+                icon: Icons.settings_outlined,
+                title: context.tr('settings'),
+                subtitle: context.tr('changeLanguage'),
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const LanguageSettingsScreen(),
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 10),
+
               // ── Sign Out ──
               _MenuTile(
                 icon: Icons.logout,
-                title: 'Sign Out',
+                title: context.tr('signOut'),
                 iconColor: Colors.red.shade400,
                 onTap: () async {
                   final shouldLogout = await showDialog<bool>(

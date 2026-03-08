@@ -10,7 +10,12 @@ class AdminUsersScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final async = ref.watch(adminUsersProvider);
     return Scaffold(
-      appBar: AppBar(title: const Text('Users')),
+      backgroundColor: const Color(0xFFE8F8F5),
+      appBar: AppBar(
+        title: const Text('Users'),
+        backgroundColor: Colors.white,
+        surfaceTintColor: Colors.white,
+      ),
       body: async.when(
         data: (either) => either.fold(
           (failure) => _buildError(context, failure),

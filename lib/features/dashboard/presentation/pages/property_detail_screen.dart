@@ -421,6 +421,71 @@ class _PropertyDetailScreenState extends ConsumerState<PropertyDetailScreen> {
     );
   }
 
+  Future<void> _showBookingOptions() async {
+    if (!mounted || _bookingSubmitting || _bookingRequestSent) return;
+
+    final selected = await showModalBottomSheet<String>(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Choose booking option',
+                  style: TextStyle(
+                    fontSize: 17,
+                    fontWeight: FontWeight.w800,
+                    color: Color(0xFF103033),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: const Icon(Icons.payments_outlined),
+                  title: const Text('Pay & Book'),
+                  subtitle: const Text(
+                    'Proceed with payment and send request.',
+                  ),
+                  onTap: () => Navigator.of(ctx).pop('pay'),
+                ),
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: const Icon(Icons.bookmark_add_outlined),
+                  title: const Text('Book Only'),
+                  subtitle: const Text('Send booking request without payment.'),
+                  onTap: () => Navigator.of(ctx).pop('book'),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+
+    if (!mounted || selected == null) return;
+
+    if (selected == 'pay') {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Payment flow will open here. Sending request for now.',
+          ),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+
+    await _requestBooking();
+  }
+
   @override
   Widget build(BuildContext context) {
     final property = _details ?? <String, dynamic>{};
@@ -973,7 +1038,7 @@ class _PropertyDetailScreenState extends ConsumerState<PropertyDetailScreen> {
                                         (isAvailable &&
                                             !_bookingSubmitting &&
                                             !_bookingRequestSent)
-                                        ? _requestBooking
+                                        ? _showBookingOptions
                                         : null,
                                     style: ElevatedButton.styleFrom(
                                       backgroundColor: _bookingRequestSent
@@ -1016,6 +1081,41 @@ class _PropertyDetailScreenState extends ConsumerState<PropertyDetailScreen> {
                                     ),
                                   ),
                                 ),
+                                if (_ownerId != null &&
+                                    _ownerId!.isNotEmpty) ...[
+                                  const SizedBox(height: 10),
+                                  SizedBox(
+                                    width: double.infinity,
+                                    child: OutlinedButton.icon(
+                                      onPressed: _openConversationWithOwner,
+                                      style: OutlinedButton.styleFrom(
+                                        foregroundColor: const Color(
+                                          0xFF4F46E5,
+                                        ),
+                                        side: const BorderSide(
+                                          color: Color(0xFF4F46E5),
+                                        ),
+                                        padding: const EdgeInsets.symmetric(
+                                          vertical: 12,
+                                        ),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(
+                                            12,
+                                          ),
+                                        ),
+                                      ),
+                                      icon: const Icon(
+                                        Icons.chat_bubble_outline,
+                                      ),
+                                      label: const Text(
+                                        'Chat with Owner',
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.w700,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ],
                             ],
                           ),
@@ -1106,21 +1206,6 @@ class _PropertyDetailScreenState extends ConsumerState<PropertyDetailScreen> {
           ),
         ),
       ),
-      floatingActionButton:
-          (!_isOwner && (_ownerId != null && _ownerId!.isNotEmpty))
-          ? FloatingActionButton.extended(
-              onPressed: _openConversationWithOwner,
-              backgroundColor: const Color(0xFF4F46E5),
-              icon: const Icon(Icons.chat_bubble_outline, color: Colors.white),
-              label: const Text(
-                'Chat with Owner',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            )
-          : null,
     );
   }
 }

@@ -7,6 +7,7 @@ import '../../domain/usecases/get_admin_users_usecase.dart';
 import '../../domain/usecases/delete_user_usecase.dart';
 import '../../domain/usecases/promote_user_usecase.dart';
 import '../../domain/usecases/get_admin_properties_usecase.dart';
+import '../../domain/usecases/get_admin_bookings_usecase.dart';
 import '../../domain/usecases/update_admin_property_status_usecase.dart';
 import '../../domain/usecases/delete_admin_property_usecase.dart';
 
@@ -106,6 +107,28 @@ final adminPropertiesProvider =
       AdminPropertiesNotifier,
       AsyncValue<Either<Failure, List<dynamic>>>
     >(AdminPropertiesNotifier.new);
+
+class AdminBookingsNotifier
+    extends Notifier<AsyncValue<Either<Failure, List<dynamic>>>> {
+  @override
+  AsyncValue<Either<Failure, List<dynamic>>> build() {
+    fetch();
+    return const AsyncValue.loading();
+  }
+
+  Future<void> fetch() async {
+    state = const AsyncValue.loading();
+    final usecase = ref.read(getAdminBookingsUseCaseProvider);
+    final res = await usecase.execute();
+    state = AsyncValue.data(res);
+  }
+}
+
+final adminBookingsProvider =
+    NotifierProvider<
+      AdminBookingsNotifier,
+      AsyncValue<Either<Failure, List<dynamic>>>
+    >(AdminBookingsNotifier.new);
 
 final adminOverviewProvider =
     FutureProvider.autoDispose<Either<Failure, AdminOverviewEntity>>((
