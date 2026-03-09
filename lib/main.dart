@@ -4,10 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:rentora/app/app.dart';
 import 'package:rentora/core/services/hive/hive_service.dart';
-
-final sharedPreferencesProvider = Provider<SharedPreferences>((ref) {
-  throw UnimplementedError();
-});
+import 'package:rentora/core/services/storage/shared_prefs_service.dart';
 
 final hiveServiceProvider = Provider<HiveService>((ref) {
   throw UnimplementedError();

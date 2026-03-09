@@ -24,6 +24,6 @@ class SignupUsecase {
       user,
       profileImage: profileImage,
       confirmPassword: confirmPassword,
-    ); // UPDATED
+    );
   }
 }

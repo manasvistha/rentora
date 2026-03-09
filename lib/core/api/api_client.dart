@@ -29,21 +29,15 @@ class ApiClient {
       ),
     );
 
+    if (kDebugMode) {
+      debugPrint('Rentora API Base URL: ${ApiEndpoints.baseUrl}');
+    }
+
     // Add Auth Interceptor
     _dio.interceptors.add(_AuthInterceptor(_sessionService));
 
-    // Auto retry on network failures
-    _dio.interceptors.add(
-      RetryInterceptor(
-        dio: _dio,
-        retries: 3,
-        retryDelays: const [
-          Duration(seconds: 1),
-          Duration(seconds: 2),
-          Duration(seconds: 3),
-        ],
-      ),
-    );
+    // Avoid retrying non-idempotent calls like login/register.
+    _dio.interceptors.add(RetryInterceptor(dio: _dio, retries: 0));
 
     // Only add logger in debug mode
     if (kDebugMode) {
